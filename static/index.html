@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html class="dark" lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Zen Task Dashboard</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<script>
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                colors: {
+                    primary: "#D65C7C",
+                    "primary-hover": "#E87C99",
+                    "accent-gold": "#C8AA6E",
+                    "indigo-deep": "#0F172A",
+                    "indigo-card": "#1E293B",
+                    "indigo-lighter": "#334155",
+                    "background-light": "#F3F4F6",
+                    "background-dark": "#0B1120",
+                    "text-light": "#E2E8F0",
+                    "text-muted": "#94A3B8"
+                },
+                fontFamily: {
+                    sans: ['"Inter"', 'sans-serif'],
+                    display: ['"Noto Sans JP"', 'sans-serif']
+                },
+                backgroundImage: {
+                    'washi-pattern': "url('data:image/svg+xml,%3Csvg width=\\'64\\' height=\\'64\\' viewBox=\\'0 0 64 64\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cpath d=\\'M8 16c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8zm0-2c3.314 0 6-2.686 6-6s-2.686-6-6-6-6 2.686-6 6 2.686 6 6 6zm33.414-6l5.95-5.95L45.95.636 40 6.586 34.05.636 32.636 2.05 38.586 8l-5.95 5.95 1.414 1.414L40 9.414l5.95 5.95 1.414-1.414L41.414 8zM40 48c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8zm0-2c3.314 0 6-2.686 6-6s-2.686-6-6-6-6 2.686-6 6 2.686 6 6 6zM9.414 40l5.95-5.95-1.414-1.414L8 38.586l-5.95-5.95L.636 34.05 6.586 40l-5.95 5.95 1.414 1.414L8 41.414l5.95 5.95 1.414-1.414L9.414 40z\\' fill=\\'%239C92AC\\' fill-opacity=\\'0.03\\' fill-rule=\\'evenodd\\'/%3E%3C/svg%3E')"
+                }
+            }
+        }
+    };
+</script>
+<style>
+    :root {
+        --bg-primary: #0B1120;
+        --bg-secondary: #1E293B;
+        --bg-card: #334155;
+        --text-primary: #E2E8F0;
+        --text-secondary: #94A3B8;
+        --accent-primary: #D65C7C;
+        --accent-green: #10B981;
+        --accent-orange: #F59E0B;
+        --accent-red: #EF4444;
+        --border-color: #334155;
+    }
+
+    .glass-panel {
+        background: rgba(30, 41, 59, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .japanese-border-bottom {
+        position: relative;
+    }
+
+    .japanese-border-bottom::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(214, 92, 124, 0.5), transparent);
+    }
+
+    .category-item.active {
+        background: rgba(51, 65, 85, 0.5);
+        border-left-color: var(--accent-primary);
+        color: var(--accent-primary);
+    }
+
+    .filter-tab.active {
+        background: rgba(255, 255, 255, 0.95);
+        color: #0f172a;
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.15);
+    }
+
+    .dark .filter-tab.active {
+        background: rgba(51, 65, 85, 0.7);
+        color: #ffffff;
+        box-shadow: 0 8px 18px rgba(10, 15, 25, 0.35);
+    }
+
+    .todo-item {
+        background: rgba(30, 41, 59, 0.6);
+        border: 1px solid rgba(148, 163, 184, 0.12);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.95rem 1.1rem;
+        transition: all 0.2s ease;
+    }
+
+    .todo-item:hover {
+        border-color: rgba(214, 92, 124, 0.45);
+        transform: translateY(-2px);
+    }
+
+    .todo-item.completed {
+        opacity: 0.6;
+    }
+
+    .todo-item.completed .todo-title {
+        text-decoration: line-through;
+    }
+
+    .todo-checkbox {
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        border: 2px solid rgba(148, 163, 184, 0.5);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: all 0.2s ease;
+    }
+
+    .todo-checkbox:hover {
+        border-color: var(--accent-green);
+    }
+
+    .todo-checkbox.checked {
+        background: var(--accent-green);
+        border-color: var(--accent-green);
+    }
+
+    .todo-checkbox.checked::after {
+        content: '✓';
+        color: white;
+        font-size: 0.75rem;
+        font-weight: bold;
+    }
+
+    .todo-content {
+        flex: 1;
+    }
+
+    .todo-title {
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+        color: var(--text-primary);
+    }
+
+    .todo-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+    }
+
+    .todo-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .priority-badge {
+        padding: 0.2rem 0.6rem;
+        border-radius: 999px;
+        font-size: 0.65rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        border: 1px solid transparent;
+    }
+
+    .priority-urgent {
+        background: rgba(239, 68, 68, 0.15);
+        color: #f87171;
+        border-color: rgba(239, 68, 68, 0.35);
+    }
+
+    .priority-important {
+        background: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
+        border-color: rgba(245, 158, 11, 0.35);
+    }
+
+    .priority-normal {
+        background: rgba(148, 163, 184, 0.2);
+        color: var(--text-secondary);
+        border-color: rgba(148, 163, 184, 0.35);
+    }
+
+    .todo-actions {
+        display: flex;
+        gap: 0.4rem;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+
+    .todo-item:hover .todo-actions {
+        opacity: 1;
+    }
+
+    .action-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        background: rgba(15, 23, 42, 0.35);
+        color: var(--text-secondary);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+
+    .action-btn:hover {
+        background: rgba(214, 92, 124, 0.2);
+        color: #f8fafc;
+        border-color: rgba(214, 92, 124, 0.4);
+    }
+
+    .action-btn.delete:hover {
+        background: rgba(239, 68, 68, 0.25);
+        border-color: rgba(239, 68, 68, 0.5);
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(11, 17, 32, 0.75);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        padding: 1.5rem;
+    }
+
+    .modal-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .modal {
+        background: rgba(30, 41, 59, 0.95);
+        padding: 2rem;
+        border-radius: 18px;
+        width: 100%;
+        max-width: 520px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 24px 60px rgba(5, 10, 20, 0.45);
+        transform: translateY(20px);
+        transition: transform 0.3s ease;
+    }
+
+    .modal-overlay.active .modal {
+        transform: translateY(0);
+    }
+
+    .modal h2 {
+        margin-bottom: 1.5rem;
+        font-size: 1.25rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border-radius: 10px;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        background: rgba(15, 23, 42, 0.6);
+        color: var(--text-primary);
+        font-size: 0.95rem;
+        font-family: inherit;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: var(--accent-primary);
+        box-shadow: 0 0 0 2px rgba(214, 92, 124, 0.2);
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+        margin-top: 1.5rem;
+    }
+
+    @media (max-width: 640px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    ::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #0f172a;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #334155;
+        border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #475569;
+    }
+</style>
+</head>
+<body class="bg-gray-100 dark:bg-background-dark text-gray-800 dark:text-text-light font-sans min-h-screen transition-colors duration-300 relative overflow-x-hidden">
+<div class="fixed top-0 left-0 w-full h-full pointer-events-none z-0 opacity-20 dark:opacity-10 bg-washi-pattern"></div>
+<div class="fixed -top-32 -right-32 w-96 h-96 bg-primary rounded-full filter blur-[120px] opacity-10 dark:opacity-20 z-0"></div>
+<div class="fixed top-1/2 -left-32 w-80 h-80 bg-blue-500 rounded-full filter blur-[100px] opacity-10 dark:opacity-10 z-0"></div>
+<div class="relative z-10 max-w-7xl mx-auto p-4 md:p-8 space-y-8" id="top">
+<header class="flex flex-col md:flex-row justify-between items-start md:items-center japanese-border-bottom pb-6 gap-4">
+    <div>
+        <div class="flex items-center gap-3">
+            <span class="text-3xl">🌙</span>
+            <h1 class="text-3xl md:text-4xl font-display font-light tracking-wide text-gray-900 dark:text-white">
+                Alex <span class="text-primary font-normal">Todo</span> Dashboard
+            </h1>
+        </div>
+        <p class="text-sm text-gray-500 dark:text-text-muted mt-1 ml-1 font-display tracking-widest uppercase text-xs" id="currentDate"></p>
+    </div>
+    <div class="flex items-center gap-3">
+        <button type="button" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-200 dark:bg-indigo-lighter/50 hover:bg-gray-300 dark:hover:bg-indigo-lighter transition-all text-sm font-medium border border-gray-300 dark:border-white/5 shadow-sm text-gray-700 dark:text-gray-200" onclick="sendDailySummary()">
+            <span class="material-icons-round text-base text-blue-400">bar_chart</span>
+            Résumé Telegram
+        </button>
+        <button type="button" class="flex items-center gap-2 px-5 py-2 rounded-lg bg-primary hover:bg-primary-hover transition-all text-sm font-semibold text-white shadow-lg shadow-primary/20" onclick="openModal()">
+            <span class="material-icons-round text-base">add</span>
+            Nouvelle tâche
+        </button>
+    </div>
+</header>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4" id="section-stats">
+    <div class="glass-panel p-5 rounded-xl flex flex-col justify-between hover:translate-y-[-2px] transition-transform duration-300 group cursor-default bg-white dark:bg-indigo-card shadow-sm dark:shadow-none">
+        <h3 class="text-xs font-bold tracking-widest text-gray-500 dark:text-gray-400 uppercase mb-2">Total Tâches</h3>
+        <div class="flex items-end justify-between">
+            <span class="text-4xl font-display font-light text-gray-900 dark:text-white" id="statTotal">0</span>
+            <span class="material-icons-round text-primary/20 text-4xl group-hover:text-primary/40 transition-colors">list_alt</span>
+        </div>
+    </div>
+    <div class="glass-panel p-5 rounded-xl flex flex-col justify-between hover:translate-y-[-2px] transition-transform duration-300 group cursor-default bg-white dark:bg-indigo-card shadow-sm dark:shadow-none">
+        <h3 class="text-xs font-bold tracking-widest text-gray-500 dark:text-gray-400 uppercase mb-2">En Attente</h3>
+        <div class="flex items-end justify-between">
+            <span class="text-4xl font-display font-light text-amber-500" id="statPending">0</span>
+            <span class="material-icons-round text-amber-500/20 text-4xl group-hover:text-amber-500/40 transition-colors">hourglass_empty</span>
+        </div>
+    </div>
+    <div class="glass-panel p-5 rounded-xl flex flex-col justify-between hover:translate-y-[-2px] transition-transform duration-300 group cursor-default bg-white dark:bg-indigo-card shadow-sm dark:shadow-none">
+        <h3 class="text-xs font-bold tracking-widest text-gray-500 dark:text-gray-400 uppercase mb-2">Complétées</h3>
+        <div class="flex items-end justify-between">
+            <span class="text-4xl font-display font-light text-emerald-500" id="statCompleted">0</span>
+            <span class="material-icons-round text-emerald-500/20 text-4xl group-hover:text-emerald-500/40 transition-colors">check_circle</span>
+        </div>
+    </div>
+    <div class="glass-panel p-5 rounded-xl flex flex-col justify-between hover:translate-y-[-2px] transition-transform duration-300 group cursor-default bg-white dark:bg-indigo-card shadow-sm dark:shadow-none">
+        <h3 class="text-xs font-bold tracking-widest text-gray-500 dark:text-gray-400 uppercase mb-2">En Retard</h3>
+        <div class="flex items-end justify-between">
+            <span class="text-4xl font-display font-light text-red-500" id="statOverdue">0</span>
+            <span class="material-icons-round text-red-500/20 text-4xl group-hover:text-red-500/40 transition-colors">warning</span>
+        </div>
+    </div>
+    <div class="glass-panel p-5 rounded-xl flex flex-col justify-between hover:translate-y-[-2px] transition-transform duration-300 group cursor-default bg-white dark:bg-indigo-card shadow-sm dark:shadow-none">
+        <h3 class="text-xs font-bold tracking-widest text-gray-500 dark:text-gray-400 uppercase mb-2">Aujourd'hui</h3>
+        <div class="flex items-end justify-between">
+            <span class="text-4xl font-display font-light text-gray-900 dark:text-white" id="statToday">0</span>
+            <span class="material-icons-round text-blue-400/20 text-4xl group-hover:text-blue-400/40 transition-colors">today</span>
+        </div>
+    </div>
+</div>
+<div class="glass-panel p-6 rounded-xl bg-white dark:bg-indigo-card shadow-sm dark:shadow-none border border-gray-200 dark:border-white/5" id="section-progress">
+    <div class="flex justify-between items-center mb-3">
+        <span class="text-sm font-medium text-gray-600 dark:text-gray-300">Progression globale</span>
+        <span class="text-sm font-bold text-primary" id="progressPercent">0%</span>
+    </div>
+    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
+        <div class="bg-primary h-2.5 rounded-full w-0 shadow-[0_0_10px_rgba(214,92,124,0.5)]" id="progressFill" style="width: 0%"></div>
+    </div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-[500px]">
+    <aside class="glass-panel rounded-xl p-4 lg:col-span-1 bg-white dark:bg-indigo-card shadow-sm dark:shadow-none h-full border border-gray-200 dark:border-white/5">
+        <h2 class="text-xs font-bold tracking-widest text-gray-500 dark:text-gray-400 uppercase mb-4 px-2">Catégories</h2>
+        <nav class="space-y-1">
+            <button type="button" class="category-item active flex items-center justify-between px-3 py-3 rounded-lg text-gray-700 dark:text-gray-300 border-l-4 border-transparent transition-all group" data-category="all">
+                <div class="flex items-center gap-3">
+                    <span class="text-lg opacity-80 group-hover:scale-110 transition-transform">⛩️</span>
+                    <span class="font-medium text-sm">Toutes</span>
+                </div>
+                <span class="text-xs font-bold bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full text-gray-500 dark:text-gray-400" id="countAll">0</span>
+            </button>
+            <button type="button" class="category-item flex items-center justify-between px-3 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-indigo-lighter/30 text-gray-700 dark:text-gray-300 border-l-4 border-transparent hover:border-blue-400 transition-all group" data-category="easynode">
+                <div class="flex items-center gap-3">
+                    <span class="material-icons-round text-blue-400 text-lg group-hover:scale-110 transition-transform">rocket_launch</span>
+                    <span class="font-medium text-sm">EasyNode</span>
+                </div>
+                <span class="text-xs font-bold bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full text-gray-500 dark:text-gray-400" id="countEasynode">0</span>
+            </button>
+            <button type="button" class="category-item flex items-center justify-between px-3 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-indigo-lighter/30 text-gray-700 dark:text-gray-300 border-l-4 border-transparent hover:border-emerald-400 transition-all group" data-category="immobilier">
+                <div class="flex items-center gap-3">
+                    <span class="text-lg group-hover:scale-110 transition-transform">🏯</span>
+                    <span class="font-medium text-sm">Immobilier</span>
+                </div>
+                <span class="text-xs font-bold bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full text-gray-500 dark:text-gray-400" id="countImmobilier">0</span>
+            </button>
+            <button type="button" class="category-item flex items-center justify-between px-3 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-indigo-lighter/30 text-gray-700 dark:text-gray-300 border-l-4 border-transparent hover:border-purple-400 transition-all group" data-category="content">
+                <div class="flex items-center gap-3">
+                    <span class="material-icons-round text-purple-400 text-lg group-hover:scale-110 transition-transform">smartphone</span>
+                    <span class="font-medium text-sm">Content</span>
+                </div>
+                <span class="text-xs font-bold bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full text-gray-500 dark:text-gray-400" id="countContent">0</span>
+            </button>
+            <button type="button" class="category-item flex items-center justify-between px-3 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-indigo-lighter/30 text-gray-700 dark:text-gray-300 border-l-4 border-transparent hover:border-pink-300 transition-all group" data-category="personnel">
+                <div class="flex items-center gap-3">
+                    <span class="text-lg group-hover:scale-110 transition-transform">🎋</span>
+                    <span class="font-medium text-sm">Personnel</span>
+                </div>
+                <span class="text-xs font-bold bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full text-gray-500 dark:text-gray-400" id="countPersonnel">0</span>
+            </button>
+            <button type="button" class="category-item flex items-center justify-between px-3 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-indigo-lighter/30 text-gray-700 dark:text-gray-300 border-l-4 border-transparent hover:border-gray-400 transition-all group" data-category="admin">
+                <div class="flex items-center gap-3">
+                    <span class="material-icons-round text-gray-400 text-lg group-hover:scale-110 transition-transform">description</span>
+                    <span class="font-medium text-sm">Admin</span>
+                </div>
+                <span class="text-xs font-bold bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full text-gray-500 dark:text-gray-400" id="countAdmin">0</span>
+            </button>
+        </nav>
+        <div class="mt-6 border-t border-gray-200 dark:border-white/5 pt-4">
+            <h3 class="text-xs font-bold tracking-widest text-gray-500 dark:text-gray-400 uppercase mb-3 px-2">Liens utiles</h3>
+            <div class="space-y-2">
+                <a class="flex items-center justify-between px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-indigo-lighter/30 transition-all" href="#section-stats">Statistiques</a>
+                <a class="flex items-center justify-between px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-indigo-lighter/30 transition-all" href="#section-progress">Progression</a>
+                <a class="flex items-center justify-between px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-indigo-lighter/30 transition-all" href="#section-tasks">Tâches</a>
+                <a class="flex items-center justify-between px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-indigo-lighter/30 transition-all" href="#section-add">Ajout rapide</a>
+            </div>
+        </div>
+    </aside>
+    <main class="glass-panel rounded-xl lg:col-span-3 bg-white dark:bg-indigo-card shadow-sm dark:shadow-none flex flex-col border border-gray-200 dark:border-white/5 relative overflow-hidden" id="section-tasks">
+        <div class="absolute inset-0 opacity-[0.03] dark:opacity-[0.05] pointer-events-none" style="background-image: radial-gradient(circle, #999 1px, transparent 1px); background-size: 20px 20px;"></div>
+        <div class="p-6 border-b border-gray-200 dark:border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative z-10">
+            <h2 class="text-xl font-display font-medium text-gray-800 dark:text-white" id="sectionTitle">Toutes les tâches</h2>
+            <div class="flex p-1 bg-gray-100 dark:bg-indigo-lighter/30 rounded-lg">
+                <button type="button" class="filter-tab px-4 py-1.5 rounded-md text-xs font-medium transition-all active" data-status="all">Toutes</button>
+                <button type="button" class="filter-tab px-4 py-1.5 rounded-md text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-all" data-status="pending">En attente</button>
+                <button type="button" class="filter-tab px-4 py-1.5 rounded-md text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-all" data-status="completed">Terminées</button>
+            </div>
+        </div>
+        <div class="p-6 flex-grow relative z-10">
+            <div class="flex gap-2 mb-10" id="section-add">
+                <div class="relative flex-grow">
+                    <input class="w-full bg-gray-50 dark:bg-indigo-lighter/20 border border-gray-200 dark:border-white/10 rounded-lg py-3 px-4 text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" placeholder="Ajouter rapidement une tâche... (Entrée pour valider)" type="text" id="quickAddInput"/>
+                </div>
+                <button type="button" class="bg-primary hover:bg-primary-hover text-white rounded-lg px-4 flex items-center justify-center transition-colors shadow-lg shadow-primary/20" onclick="quickAdd()">
+                    <span class="material-icons-round">add</span>
+                </button>
+            </div>
+            <div class="space-y-3" id="todoList">
+                <div class="flex flex-col items-center justify-center h-64 text-center mt-4">
+                    <div class="relative mb-6">
+                        <div class="w-32 h-32 rounded-full bg-gradient-to-b from-transparent to-gray-100 dark:to-indigo-lighter/10 flex items-center justify-center">
+                            <span class="text-6xl drop-shadow-xl animate-pulse">🗻</span>
+                        </div>
+                        <div class="absolute -top-2 right-0 text-xl animate-bounce" style="animation-duration: 3s;">🌸</div>
+                        <div class="absolute top-10 -left-4 text-lg animate-bounce" style="animation-duration: 4s; animation-delay: 1s;">🌸</div>
+                    </div>
+                    <h3 class="text-lg font-display font-medium text-gray-700 dark:text-gray-200 mb-1">Aucune tâche ici!</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
+                        L'esprit est clair comme l'eau calme.<br/>Profitez de ce moment de sérénité.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="h-1 w-full bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>
+    </main>
+</div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+        <h2 class="font-display" id="modalTitle">Nouvelle tâche</h2>
+        <form id="todoForm">
+            <input type="hidden" id="todoId"/>
+            <div class="form-group">
+                <label for="todoTitle">Titre</label>
+                <input type="text" id="todoTitle" required placeholder="Ex: Finir le script LLM"/>
+            </div>
+            <div class="form-group">
+                <label for="todoDescription">Description (optionnel)</label>
+                <textarea id="todoDescription" rows="2" placeholder="Détails supplémentaires..."></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="todoCategory">Catégorie</label>
+                    <select id="todoCategory">
+                        <option value="easynode">🚀 EasyNode</option>
+                        <option value="immobilier">🏯 Immobilier</option>
+                        <option value="content">📱 Content</option>
+                        <option value="personnel">🎋 Personnel</option>
+                        <option value="admin">📄 Admin</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="todoPriority">Priorité</label>
+                    <select id="todoPriority">
+                        <option value="normal">🟡 Normal</option>
+                        <option value="important">🟠 Important</option>
+                        <option value="urgent">🔴 Urgent</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="todoDeadline">Deadline (optionnel)</label>
+                <input type="datetime-local" id="todoDeadline"/>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-200 dark:bg-indigo-lighter/40 hover:bg-gray-300 dark:hover:bg-indigo-lighter transition-all text-sm font-medium text-gray-700 dark:text-gray-200" onclick="closeModal()">Annuler</button>
+                <button type="submit" class="flex items-center gap-2 px-5 py-2 rounded-lg bg-primary hover:bg-primary-hover transition-all text-sm font-semibold text-white shadow-lg shadow-primary/20">Enregistrer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // State
+    let todos = [];
+    let currentFilter = { status: 'all', category: 'all' };
+
+    // API Base URL
+    const API_URL = '';
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+        updateDate();
+        loadTodos();
+        loadStats();
+        setupEventListeners();
+    });
+
+    function updateDate() {
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('currentDate').textContent =
+            new Date().toLocaleDateString('fr-FR', options);
+    }
+
+    function setupEventListeners() {
+        // Category filters
+        document.querySelectorAll('.category-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.category-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                currentFilter.category = item.dataset.category;
+                updateSectionTitle();
+                renderTodos();
+            });
+        });
+
+        // Status filters
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentFilter.status = tab.dataset.status;
+                renderTodos();
+            });
+        });
+
+        // Quick add on Enter
+        document.getElementById('quickAddInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') quickAdd();
+        });
+
+        // Form submit
+        document.getElementById('todoForm').addEventListener('submit', handleFormSubmit);
+
+        // Close modal on overlay click
+        document.getElementById('modalOverlay').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closeModal();
+        });
+    }
+
+    function updateSectionTitle() {
+        const titles = {
+            'all': 'Toutes les tâches',
+            'easynode': '🚀 EasyNode',
+            'immobilier': '🏯 Immobilier',
+            'content': '📱 Content',
+            'personnel': '🎋 Personnel',
+            'admin': '📄 Admin'
+        };
+        document.getElementById('sectionTitle').textContent = titles[currentFilter.category] || 'Toutes les tâches';
+    }
+
+    // API Functions
+    async function loadTodos() {
+        try {
+            const response = await fetch(`${API_URL}/api/todos`);
+            todos = await response.json();
+            renderTodos();
+            updateCategoryCounts();
+        } catch (error) {
+            console.error('Error loading todos:', error);
+        }
+    }
+
+    async function loadStats() {
+        try {
+            const response = await fetch(`${API_URL}/api/stats`);
+            const stats = await response.json();
+
+            document.getElementById('statTotal').textContent = stats.total;
+            document.getElementById('statPending').textContent = stats.pending;
+            document.getElementById('statCompleted').textContent = stats.completed;
+            document.getElementById('statOverdue').textContent = stats.overdue;
+            document.getElementById('statToday').textContent = stats.today_completed;
+            document.getElementById('progressPercent').textContent = `${stats.completion_rate}%`;
+            document.getElementById('progressFill').style.width = `${stats.completion_rate}%`;
+        } catch (error) {
+            console.error('Error loading stats:', error);
+        }
+    }
+
+    async function createTodo(data) {
+        try {
+            const response = await fetch(`${API_URL}/api/todos`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const todo = await response.json();
+            todos.unshift(todo);
+            renderTodos();
+            loadStats();
+            updateCategoryCounts();
+        } catch (error) {
+            console.error('Error creating todo:', error);
+        }
+    }
+
+    async function updateTodo(id, data) {
+        try {
+            const response = await fetch(`${API_URL}/api/todos/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const updated = await response.json();
+            const index = todos.findIndex(t => t.id === id);
+            if (index !== -1) todos[index] = updated;
+            renderTodos();
+            loadStats();
+            updateCategoryCounts();
+        } catch (error) {
+            console.error('Error updating todo:', error);
+        }
+    }
+
+    async function deleteTodo(id) {
+        if (!confirm('Supprimer cette tâche ?')) return;
+
+        try {
+            await fetch(`${API_URL}/api/todos/${id}`, { method: 'DELETE' });
+            todos = todos.filter(t => t.id !== id);
+            renderTodos();
+            loadStats();
+            updateCategoryCounts();
+        } catch (error) {
+            console.error('Error deleting todo:', error);
+        }
+    }
+
+    async function sendDailySummary() {
+        try {
+            await fetch(`${API_URL}/api/daily-summary`, { method: 'POST' });
+            alert('📊 Résumé envoyé sur Telegram!');
+        } catch (error) {
+            console.error('Error sending summary:', error);
+        }
+    }
+
+    // Render Functions
+    function renderTodos() {
+        const list = document.getElementById('todoList');
+        let filtered = [...todos];
+
+        // Apply filters
+        if (currentFilter.status !== 'all') {
+            filtered = filtered.filter(t => t.status === currentFilter.status);
+        }
+        if (currentFilter.category !== 'all') {
+            filtered = filtered.filter(t => t.category === currentFilter.category);
+        }
+
+        if (filtered.length === 0) {
+            list.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-64 text-center mt-4">
+                    <div class="relative mb-6">
+                        <div class="w-32 h-32 rounded-full bg-gradient-to-b from-transparent to-gray-100 dark:to-indigo-lighter/10 flex items-center justify-center">
+                            <span class="text-6xl drop-shadow-xl animate-pulse">🗻</span>
+                        </div>
+                        <div class="absolute -top-2 right-0 text-xl animate-bounce" style="animation-duration: 3s;">🌸</div>
+                        <div class="absolute top-10 -left-4 text-lg animate-bounce" style="animation-duration: 4s; animation-delay: 1s;">🌸</div>
+                    </div>
+                    <h3 class="text-lg font-display font-medium text-gray-700 dark:text-gray-200 mb-1">Aucune tâche ici!</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
+                        L'esprit est clair comme l'eau calme.<br/>Profitez de ce moment de sérénité.
+                    </p>
+                </div>
+            `;
+            return;
+        }
+
+        list.innerHTML = filtered.map(todo => {
+            const priorityClass = `priority-${todo.priority}`;
+            const isCompleted = todo.status === 'completed';
+            const categoryEmoji = {
+                'easynode': '🚀',
+                'immobilier': '🏯',
+                'content': '📱',
+                'personnel': '🎋',
+                'admin': '📄'
+            }[todo.category] || '📋';
+
+            let deadlineStr = '';
+            if (todo.deadline) {
+                const deadline = new Date(todo.deadline);
+                deadlineStr = deadline.toLocaleDateString('fr-FR', {
+                    day: 'numeric',
+                    month: 'short',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+
+            return `
+                <div class="todo-item ${isCompleted ? 'completed' : ''}" data-id="${todo.id}">
+                    <div class="todo-checkbox ${isCompleted ? 'checked' : ''}" onclick="toggleTodo(${todo.id}, '${todo.status}')"></div>
+                    <div class="todo-content">
+                        <div class="todo-title">${todo.title}</div>
+                        <div class="todo-meta">
+                            <span>${categoryEmoji} ${todo.category}</span>
+                            ${deadlineStr ? `<span>⏳ ${deadlineStr}</span>` : ''}
+                        </div>
+                    </div>
+                    <span class="priority-badge ${priorityClass}">${todo.priority}</span>
+                    <div class="todo-actions">
+                        <button class="action-btn" onclick="editTodo(${todo.id})">✏️</button>
+                        <button class="action-btn delete" onclick="deleteTodo(${todo.id})">🗑️</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function updateCategoryCounts() {
+        const counts = {
+            all: todos.filter(t => t.status === 'pending').length,
+            easynode: todos.filter(t => t.category === 'easynode' && t.status === 'pending').length,
+            immobilier: todos.filter(t => t.category === 'immobilier' && t.status === 'pending').length,
+            content: todos.filter(t => t.category === 'content' && t.status === 'pending').length,
+            personnel: todos.filter(t => t.category === 'personnel' && t.status === 'pending').length,
+            admin: todos.filter(t => t.category === 'admin' && t.status === 'pending').length
+        };
+
+        document.getElementById('countAll').textContent = counts.all;
+        document.getElementById('countEasynode').textContent = counts.easynode;
+        document.getElementById('countImmobilier').textContent = counts.immobilier;
+        document.getElementById('countContent').textContent = counts.content;
+        document.getElementById('countPersonnel').textContent = counts.personnel;
+        document.getElementById('countAdmin').textContent = counts.admin;
+    }
+
+    // Actions
+    function toggleTodo(id, currentStatus) {
+        const newStatus = currentStatus === 'completed' ? 'pending' : 'completed';
+        updateTodo(id, { status: newStatus });
+    }
+
+    function quickAdd() {
+        const input = document.getElementById('quickAddInput');
+        const title = input.value.trim();
+        if (!title) return;
+
+        createTodo({
+            title,
+            category: currentFilter.category !== 'all' ? currentFilter.category : 'easynode',
+            priority: 'normal'
+        });
+        input.value = '';
+    }
+
+    function openModal(todoId = null) {
+        const modal = document.getElementById('modalOverlay');
+        const form = document.getElementById('todoForm');
+        const title = document.getElementById('modalTitle');
+
+        form.reset();
+        document.getElementById('todoId').value = '';
+
+        if (todoId) {
+            const todo = todos.find(t => t.id === todoId);
+            if (todo) {
+                title.textContent = 'Modifier la tâche';
+                document.getElementById('todoId').value = todo.id;
+                document.getElementById('todoTitle').value = todo.title;
+                document.getElementById('todoDescription').value = todo.description || '';
+                document.getElementById('todoCategory').value = todo.category;
+                document.getElementById('todoPriority').value = todo.priority;
+                if (todo.deadline) {
+                    document.getElementById('todoDeadline').value = todo.deadline.slice(0, 16);
+                }
+            }
+        } else {
+            title.textContent = 'Nouvelle tâche';
+        }
+
+        modal.classList.add('active');
+    }
+
+    function closeModal() {
+        document.getElementById('modalOverlay').classList.remove('active');
+    }
+
+    function editTodo(id) {
+        openModal(id);
+    }
+
+    async function handleFormSubmit(e) {
+        e.preventDefault();
+
+        const id = document.getElementById('todoId').value;
+        const data = {
+            title: document.getElementById('todoTitle').value,
+            description: document.getElementById('todoDescription').value,
+            category: document.getElementById('todoCategory').value,
+            priority: document.getElementById('todoPriority').value,
+            deadline: document.getElementById('todoDeadline').value || null
+        };
+
+        if (id) {
+            await updateTodo(parseInt(id), data);
+        } else {
+            await createTodo(data);
+        }
+
+        closeModal();
+    }
+</script>
+</body>
+</html>
