@@ -15,6 +15,14 @@ venv/
 # Runtime data
 /data/
 *.db
+data/
+
+# Google credentials (NEVER commit these)
+gmail_credentials.json
+token.json
+token.pickle
+*.pickle
 
 # OS
 .DS_Store
+
