@@ -27,6 +27,9 @@ TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY')
 CLAUDE_MODEL = os.getenv('CLAUDE_MODEL', 'claude-haiku-4-5-20251001')
 
+# Security: Token for dashboard access (optional)
+DASHBOARD_ACCESS_TOKEN = os.getenv('DASHBOARD_ACCESS_TOKEN')  # None = no protection
+
 # Claude client
 claude = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY) if ANTHROPIC_API_KEY else None
 
@@ -326,12 +329,41 @@ scheduler.start()
 generate_daily_content()
 
 
+# ============== Security ==============
+
+@app.before_request
+def check_dashboard_access():
+    """Check access token for dashboard pages (not API)."""
+    # Skip if no token configured (open access)
+    if not DASHBOARD_ACCESS_TOKEN:
+        return None
+    
+    # Skip API endpoints (bot needs unrestricted access)
+    if request.path.startswith('/api/'):
+        return None
+    
+    # Skip static files
+    if request.path.startswith('/static/'):
+        return None
+    
+    # Check token in query params or session
+    token = request.args.get('token') or request.cookies.get('dashboard_token')
+    if token != DASHBOARD_ACCESS_TOKEN:
+        return "🔒 Accès refusé. Token invalide ou manquant.", 401
+    
+    return None
+
+
 # ============== API Routes ==============
 
 @app.route('/')
 def index():
     """Serve the dashboard."""
-    return send_from_directory('static', 'index.html')
+    response = send_from_directory('static', 'index.html')
+    # Set cookie if valid token in URL (for subsequent requests)
+    if DASHBOARD_ACCESS_TOKEN and request.args.get('token') == DASHBOARD_ACCESS_TOKEN:
+        response.set_cookie('dashboard_token', DASHBOARD_ACCESS_TOKEN, max_age=86400, httponly=True)
+    return response
 
 
 @app.route('/api/todos', methods=['GET'])

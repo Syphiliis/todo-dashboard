@@ -36,6 +36,10 @@ claude = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 # Cache pour réduire les appels API
 command_cache = {}
 
+# État conversationnel pour /add intelligent (max 2 échanges)
+# Structure: {chat_id: {'task': {...}, 'state': str, 'timestamp': datetime, 'message_id': int}}
+pending_tasks = {}
+
 # =============================================================================
 # OPTIMISATION TOKENS : Prompts système courts et précis
 # =============================================================================
@@ -51,6 +55,29 @@ EasyNode = startup IA souveraine française, infrastructure GPU, LLM locaux
 Souverain AI = marque thought leadership IA souveraine
 
 Sois concis, impactant, professionnel."""
+
+SYSTEM_PROMPT_TASK_ASSISTANT = """Tu es un assistant de productivité expert qui aide Alexandre à créer des tâches bien structurées.
+
+Contexte Alexandre:
+- Fondateur de EasyNode (startup IA souveraine française)
+- Gère plusieurs projets: tech, immobilier, contenu, admin
+- A besoin de tâches claires et actionnables
+
+Ton rôle:
+1. Reformuler la tâche de manière claire et actionnable
+2. Déterminer la catégorie (easynode, immobilier, content, personnel, admin)
+3. Évaluer la priorité (urgent, important, normal)
+4. Estimer le temps réaliste (sois précis: 30min, 1-2h, 3-4h, etc.)
+5. Proposer un guide de réalisation en 3-5 étapes concrètes
+6. Poser des questions SEULEMENT si vraiment nécessaire (max 2 questions)
+
+Règles:
+- Si la tâche est claire, ne pose PAS de questions
+- Si la tâche est vague ou manque d'infos critiques, pose 1-2 questions ciblées
+- Le guide doit être concret et actionnable
+- Estime le temps de façon réaliste
+
+Réponds UNIQUEMENT en JSON valide."""
 
 
 # =============================================================================
@@ -159,6 +186,98 @@ Génère en JSON:
         return {'error': 'Invalid JSON from Claude'}
     except Exception as e:
         logger.error(f"Claude API Error: {e}")
+        return {'error': str(e)}
+
+
+def analyze_task_with_claude(message: str) -> dict:
+    """
+    Analyse une tâche avec Claude pour le mode intelligent.
+    Retourne: titre, catégorie, priorité, temps estimé, guide, questions éventuelles.
+    """
+    user_prompt = f"""Analyse cette demande de tâche: "{message}"
+
+Réponds en JSON:
+{{
+    "title": "titre reformulé, clair et actionnable",
+    "category": "easynode|immobilier|content|personnel|admin",
+    "priority": "urgent|important|normal",
+    "time_estimate": "estimation réaliste (ex: 30min, 1-2h, 3-4h, 1 jour)",
+    "deadline": null,
+    "guide": ["étape 1 concrète", "étape 2 concrète", "étape 3 concrète"],
+    "questions": [],
+    "needs_clarification": false
+}}
+
+Si la tâche est vague ou manque d'infos importantes, mets needs_clarification à true et ajoute 1-2 questions ciblées dans "questions".
+Sinon, laisse questions vide et needs_clarification à false."""
+
+    try:
+        response = claude.messages.create(
+            model=CLAUDE_MODEL,
+            max_tokens=800,
+            system=SYSTEM_PROMPT_TASK_ASSISTANT,
+            messages=[{"role": "user", "content": user_prompt}]
+        )
+
+        text = response.content[0].text.strip()
+        if text.startswith('```'):
+            text = re.sub(r'```json?\n?', '', text)
+            text = text.replace('```', '')
+
+        return json.loads(text)
+
+    except json.JSONDecodeError as e:
+        logger.error(f"JSON Parse Error in analyze_task: {e}")
+        return {'error': 'Invalid JSON from Claude'}
+    except Exception as e:
+        logger.error(f"Claude API Error in analyze_task: {e}")
+        return {'error': str(e)}
+
+
+def finalize_task_with_claude(original_task: dict, user_response: str) -> dict:
+    """
+    Finalise une tâche en intégrant les réponses de l'utilisateur.
+    """
+    user_prompt = f"""Tâche en cours de création:
+- Titre proposé: "{original_task.get('title', '')}"
+- Catégorie: {original_task.get('category', 'easynode')}
+- Priorité: {original_task.get('priority', 'normal')}
+- Temps estimé: {original_task.get('time_estimate', 'non défini')}
+
+Questions posées: {original_task.get('questions', [])}
+
+Réponse de l'utilisateur: "{user_response}"
+
+Intègre les réponses et finalise en JSON:
+{{
+    "title": "titre final",
+    "category": "easynode|immobilier|content|personnel|admin",
+    "priority": "urgent|important|normal",
+    "time_estimate": "temps final",
+    "deadline": "YYYY-MM-DD ou null",
+    "guide": ["étape 1", "étape 2", "étape 3"]
+}}"""
+
+    try:
+        response = claude.messages.create(
+            model=CLAUDE_MODEL,
+            max_tokens=500,
+            system=SYSTEM_PROMPT_TASK_ASSISTANT,
+            messages=[{"role": "user", "content": user_prompt}]
+        )
+
+        text = response.content[0].text.strip()
+        if text.startswith('```'):
+            text = re.sub(r'```json?\n?', '', text)
+            text = text.replace('```', '')
+
+        return json.loads(text)
+
+    except json.JSONDecodeError as e:
+        logger.error(f"JSON Parse Error in finalize_task: {e}")
+        return {'error': 'Invalid JSON from Claude'}
+    except Exception as e:
+        logger.error(f"Claude API Error in finalize_task: {e}")
         return {'error': str(e)}
 
 
@@ -343,6 +462,55 @@ async def cmd_roadmap(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(msg, parse_mode='Markdown')
 
 
+async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handler /help - Affiche toutes les commandes disponibles"""
+    msg = """📚 **Commandes disponibles:**
+
+🌅 **Briefing & Emails**
+• `/briefing` - Briefing quotidien complet
+• `/emails` - Résumé des emails non lus
+
+📝 **Gestion des tâches**
+• `/add <tâche>` - Ajoute une nouvelle tâche (mode intelligent)
+• `/list` - Liste toutes les tâches en attente
+• `/done <id ou titre>` - Marque une tâche comme terminée
+
+📊 **Statistiques & Planning**
+• `/stats` - Affiche les statistiques du dashboard
+• `/roadmap` - Affiche la roadmap (mi-terme et long-terme)
+
+✍️ **Contenu**
+• `/content <sujet>` - Génère du contenu pour réseaux sociaux
+
+🔗 **Liens**
+• `/site` - Lien vers le dashboard web
+• `/help` - Affiche ce message d'aide
+
+💡 **Astuce:** Tu peux aussi m'écrire naturellement!
+_Exemples: "ajoute une tâche urgente pour finir le script", "qu'est-ce que je dois faire aujourd'hui?"_"""
+    
+    await update.message.reply_text(msg, parse_mode='Markdown')
+
+
+async def cmd_site(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handler /site - Affiche le lien du dashboard"""
+    dashboard_url = os.getenv('DASHBOARD_PUBLIC_URL', DASHBOARD_API_URL.replace('/api', ''))
+    
+    msg = f"""🌐 **Dashboard Todo**
+
+🔗 **Lien:** {dashboard_url}
+
+📊 Accède à ton dashboard pour:
+• Visualiser toutes tes tâches
+• Voir les statistiques de productivité
+• Gérer ta roadmap
+• Consulter le contenu quotidien
+
+💡 _Utilise /stats pour un aperçu rapide ici._"""
+    
+    await update.message.reply_text(msg, parse_mode='Markdown')
+
+
 async def cmd_content(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handler /content <sujet> - Génère du contenu"""
     if not context.args:
@@ -466,35 +634,210 @@ async def process_simple_briefing(update: Update):
 # TRAITEMENT DES MESSAGES NATURELS
 # =============================================================================
 
-async def process_add_task(update: Update, message: str):
-    """Traite l'ajout d'une tâche."""
-    result = parse_with_claude(message, 'add_task')
+def clean_expired_pending_tasks():
+    """Nettoie les tâches en attente expirées (> 5 minutes)."""
+    now = datetime.now()
+    expired = [
+        chat_id for chat_id, task in pending_tasks.items()
+        if (now - task['timestamp']).total_seconds() > 300  # 5 minutes
+    ]
+    for chat_id in expired:
+        del pending_tasks[chat_id]
+        logger.info(f"Expired pending task for chat {chat_id}")
 
+
+async def process_smart_add_task(update: Update, message: str):
+    """
+    Traite l'ajout d'une tâche avec le mode intelligent.
+    Échange 1: Analyse et proposition (+ questions si nécessaire)
+    """
+    chat_id = update.effective_chat.id
+    
+    # Nettoyer les tâches expirées
+    clean_expired_pending_tasks()
+    
+    await update.message.reply_text("🤖 Analyse de ta tâche...", parse_mode='Markdown')
+    
+    # Analyser avec Claude
+    result = analyze_task_with_claude(message)
+    
     if 'error' in result:
-        await update.message.reply_text(f"❌ Erreur parsing: {result['error']}")
+        await update.message.reply_text(f"❌ Erreur: {result['error']}")
         return
+    
+    priority_emoji = {'urgent': '🔴', 'important': '🟠', 'normal': '🟡'}.get(result.get('priority', 'normal'), '⚪')
+    
+    # Construire le guide de réalisation
+    guide_text = ""
+    if result.get('guide'):
+        guide_text = "\n🧭 **Guide de réalisation:**\n"
+        for i, step in enumerate(result['guide'][:5], 1):
+            guide_text += f"   {i}. {step}\n"
+    
+    # Vérifier si des questions sont nécessaires
+    needs_questions = result.get('needs_clarification', False) and result.get('questions')
+    
+    if needs_questions:
+        # Stocker l'état pour le prochain message
+        pending_tasks[chat_id] = {
+            'original_message': message,
+            'proposed_task': result,
+            'state': 'awaiting_response',
+            'timestamp': datetime.now(),
+            'message_id': update.message.message_id
+        }
+        
+        # Message avec questions
+        questions_text = "\n❓ **Questions:**\n"
+        for i, q in enumerate(result['questions'][:2], 1):
+            questions_text += f"   {i}. {q}\n"
+        
+        msg = f"""🤖 **Assistant Todo**
 
-    # Créer la tâche
+📝 **Tâche proposée:**
+• Titre: "{result.get('title', message)}"
+• Catégorie: {result.get('category', 'easynode')}
+• Priorité: {priority_emoji} {result.get('priority', 'normal')}
+• ⏱️ Temps estimé: {result.get('time_estimate', 'non défini')}
+{guide_text}
+{questions_text}
+💬 Réponds aux questions, ou envoie **ok** pour valider tel quel, ou **annule** pour annuler."""
+        
+        await update.message.reply_text(msg, parse_mode='Markdown')
+    
+    else:
+        # Pas de questions, créer directement la tâche
+        todo = create_todo(
+            title=result.get('title', message),
+            category=result.get('category', 'easynode'),
+            priority=result.get('priority', 'normal'),
+            deadline=result.get('deadline')
+        )
+        
+        if 'error' in todo:
+            await update.message.reply_text(f"❌ Erreur création: {todo['error']}")
+            return
+        
+        msg = f"""✅ **Tâche ajoutée!**
+
+{priority_emoji} **{todo['title']}**
+📁 {todo['category']} | ⏱️ {result.get('time_estimate', '?')}
+🔢 ID: {todo['id']}
+{guide_text}
+💡 Bonne chance!"""
+        
+        await update.message.reply_text(msg, parse_mode='Markdown')
+
+
+async def handle_pending_task_response(update: Update, message: str) -> bool:
+    """
+    Gère les réponses aux tâches en attente.
+    Retourne True si le message a été traité, False sinon.
+    """
+    chat_id = update.effective_chat.id
+    
+    # Nettoyer les tâches expirées
+    clean_expired_pending_tasks()
+    
+    # Vérifier s'il y a une tâche en attente
+    if chat_id not in pending_tasks:
+        return False
+    
+    pending = pending_tasks[chat_id]
+    
+    # Vérifier si c'est une annulation
+    if message.lower().strip() in ['annule', 'annuler', 'cancel', 'non', 'stop']:
+        del pending_tasks[chat_id]
+        await update.message.reply_text("❌ Tâche annulée.", parse_mode='Markdown')
+        return True
+    
+    # Vérifier si c'est une validation directe
+    if message.lower().strip() in ['ok', 'oui', 'yes', 'valide', 'valider', 'go', '👍']:
+        # Créer la tâche avec les valeurs proposées
+        result = pending['proposed_task']
+        todo = create_todo(
+            title=result.get('title', pending['original_message']),
+            category=result.get('category', 'easynode'),
+            priority=result.get('priority', 'normal'),
+            deadline=result.get('deadline')
+        )
+        
+        del pending_tasks[chat_id]
+        
+        if 'error' in todo:
+            await update.message.reply_text(f"❌ Erreur création: {todo['error']}")
+            return True
+        
+        priority_emoji = {'urgent': '🔴', 'important': '🟠', 'normal': '🟡'}.get(todo['priority'], '⚪')
+        
+        guide_text = ""
+        if result.get('guide'):
+            guide_text = "\n🧭 **Guide:**\n"
+            for i, step in enumerate(result['guide'][:5], 1):
+                guide_text += f"   {i}. {step}\n"
+        
+        msg = f"""✅ **Tâche ajoutée!**
+
+{priority_emoji} **{todo['title']}**
+📁 {todo['category']} | ⏱️ {result.get('time_estimate', '?')}
+🔢 ID: {todo['id']}
+{guide_text}
+💡 Bonne chance!"""
+        
+        await update.message.reply_text(msg, parse_mode='Markdown')
+        return True
+    
+    # Sinon, traiter comme réponse aux questions
+    await update.message.reply_text("🤖 Finalisation de la tâche...", parse_mode='Markdown')
+    
+    # Finaliser avec Claude
+    final_result = finalize_task_with_claude(pending['proposed_task'], message)
+    
+    del pending_tasks[chat_id]
+    
+    if 'error' in final_result:
+        await update.message.reply_text(f"❌ Erreur: {final_result['error']}")
+        return True
+    
+    # Créer la tâche finale
     todo = create_todo(
-        title=result.get('title', message),
-        category=result.get('category', 'easynode'),
-        priority=result.get('priority', 'normal'),
-        deadline=result.get('deadline')
+        title=final_result.get('title', pending['proposed_task'].get('title', '')),
+        category=final_result.get('category', 'easynode'),
+        priority=final_result.get('priority', 'normal'),
+        deadline=final_result.get('deadline')
     )
-
+    
     if 'error' in todo:
         await update.message.reply_text(f"❌ Erreur création: {todo['error']}")
-        return
-
+        return True
+    
     priority_emoji = {'urgent': '🔴', 'important': '🟠', 'normal': '🟡'}.get(todo['priority'], '⚪')
+    
+    guide_text = ""
+    if final_result.get('guide'):
+        guide_text = "\n🧭 **Guide:**\n"
+        for i, step in enumerate(final_result['guide'][:5], 1):
+            guide_text += f"   {i}. {step}\n"
+    
+    deadline_text = ""
+    if todo.get('deadline'):
+        deadline_text = f" | 📅 {todo['deadline']}"
+    
+    msg = f"""✅ **Tâche ajoutée!**
 
-    await update.message.reply_text(
-        f"✅ Tâche ajoutée!\n\n"
-        f"{priority_emoji} **{todo['title']}**\n"
-        f"📁 {todo['category']}\n"
-        f"🔢 ID: {todo['id']}",
-        parse_mode='Markdown'
-    )
+{priority_emoji} **{todo['title']}**
+📁 {todo['category']} | ⏱️ {final_result.get('time_estimate', '?')}{deadline_text}
+🔢 ID: {todo['id']}
+{guide_text}
+💡 Bonne chance!"""
+    
+    await update.message.reply_text(msg, parse_mode='Markdown')
+    return True
+
+
+async def process_add_task(update: Update, message: str):
+    """Alias pour le nouveau mode intelligent."""
+    await process_smart_add_task(update, message)
 
 
 async def process_complete_task(update: Update, identifier: str):
@@ -541,7 +884,6 @@ async def process_complete_task(update: Update, identifier: str):
         parse_mode='Markdown'
     )
 
-
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handler pour les messages naturels (sans commande)."""
     message = update.message.text
@@ -550,6 +892,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_chat.id) != TELEGRAM_CHAT_ID:
         logger.warning(f"Message from unauthorized chat: {update.effective_chat.id}")
         return
+
+    # PRIORITÉ: Vérifier s'il y a une tâche en attente de réponse
+    if await handle_pending_task_response(update, message):
+        return  # Message traité comme réponse à une tâche en attente
 
     # Détecter l'intention (SANS Claude = 0 tokens)
     intent = detect_intent(message)
@@ -614,6 +960,8 @@ def main():
     app.add_handler(CommandHandler("content", cmd_content))
     app.add_handler(CommandHandler("add", cmd_add))
     app.add_handler(CommandHandler("done", cmd_done))
+    app.add_handler(CommandHandler("help", cmd_help))
+    app.add_handler(CommandHandler("site", cmd_site))
 
     # Handler pour messages naturels
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
