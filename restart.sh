@@ -12,21 +12,24 @@ if systemctl list-units --full -all | grep -q "todo-dashboard.service"; then
     echo "  - Service systemd arrêté et désactivé"
 fi
 
-# 2. Tuer brutalement TOUS les processus résiduels
+# 2. Tuer brutalement TOUS les processus résiduels (uniquement todo-dashboard)
 echo "🛑 Nettoyage des processus..."
 
-# Tuer Gunicorn
-pkill -9 -f "gunicorn" && echo "  - Processus Gunicorn tués"
+# Obtenir le chemin absolu du dossier actuel
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Tuer Gunicorn (seulement si dans ce dossier)
+pkill -9 -f "gunicorn.*$SCRIPT_DIR" && echo "  - Processus Gunicorn tués"
 
 # Tuer TOUS les processus Python app.py et bot.py (avec -9 pour forcer)
-echo "  - Recherche de tous les processus Python..."
+echo "  - Recherche de tous les processus Python dans $SCRIPT_DIR..."
 
-# Méthode 1: pkill avec -9 (force kill)
-pkill -9 -f "python.*app.py" && echo "  - Anciens app.py tués (pkill)"
-pkill -9 -f "python.*bot.py" && echo "  - Anciens bot.py tués (pkill)"
+# Méthode 1: pkill avec -9 (force kill) - filtre par chemin
+pkill -9 -f "$SCRIPT_DIR.*app.py" && echo "  - Anciens app.py tués (pkill)"
+pkill -9 -f "$SCRIPT_DIR.*bot.py" && echo "  - Anciens bot.py tués (pkill)"
 
-# Méthode 2: Trouver et tuer manuellement tous les PIDs restants
-APP_PIDS=$(ps aux | grep "python.*app.py" | grep -v grep | awk '{print $2}')
+# Méthode 2: Trouver et tuer manuellement tous les PIDs restants (filtre par chemin)
+APP_PIDS=$(ps aux | grep "python.*$SCRIPT_DIR.*app.py" | grep -v grep | awk '{print $2}')
 if [ ! -z "$APP_PIDS" ]; then
     echo "  - Processus app.py restants trouvés: $APP_PIDS"
     for PID in $APP_PIDS; do
@@ -34,7 +37,7 @@ if [ ! -z "$APP_PIDS" ]; then
     done
 fi
 
-BOT_PIDS=$(ps aux | grep "python.*bot.py" | grep -v grep | awk '{print $2}')
+BOT_PIDS=$(ps aux | grep "python.*$SCRIPT_DIR.*bot.py" | grep -v grep | awk '{print $2}')
 if [ ! -z "$BOT_PIDS" ]; then
     echo "  - Processus bot.py restants trouvés: $BOT_PIDS"
     for PID in $BOT_PIDS; do
@@ -51,16 +54,17 @@ fi
 # Attendre que tout soit bien terminé
 sleep 3
 
-# Vérification finale
-REMAINING_BOTS=$(ps aux | grep "python.*bot.py" | grep -v grep | wc -l)
-REMAINING_APPS=$(ps aux | grep "python.*app.py" | grep -v grep | wc -l)
+# Vérification finale (uniquement pour ce dossier)
+REMAINING_BOTS=$(ps aux | grep "python.*$SCRIPT_DIR.*bot.py" | grep -v grep | wc -l)
+REMAINING_APPS=$(ps aux | grep "python.*$SCRIPT_DIR.*app.py" | grep -v grep | wc -l)
 
 if [ $REMAINING_BOTS -eq 0 ] && [ $REMAINING_APPS -eq 0 ]; then
-    echo "✅ Tous les processus ont été arrêtés"
+    echo "✅ Tous les processus todo-dashboard ont été arrêtés"
 else
-    echo "⚠️  Attention: $REMAINING_BOTS bot(s) et $REMAINING_APPS app(s) encore en cours"
-    ps aux | grep "python.*\(app\|bot\).py" | grep -v grep
+    echo "⚠️  Attention: $REMAINING_BOTS bot(s) et $REMAINING_APPS app(s) encore en cours dans $SCRIPT_DIR"
+    ps aux | grep "python.*$SCRIPT_DIR.*\(app\|bot\).py" | grep -v grep
 fi
+
 
 
 # 3. Mise à jour et dépendances
