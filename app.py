@@ -483,10 +483,10 @@ def get_stats():
     cursor.execute('SELECT COUNT(*) as total FROM todos')
     total = cursor.fetchone()['total']
 
-    cursor.execute('SELECT COUNT(*) as completed FROM todos WHERE status = "completed"')
+    cursor.execute("SELECT COUNT(*) as completed FROM todos WHERE status = 'completed'")
     completed = cursor.fetchone()['completed']
 
-    cursor.execute('SELECT COUNT(*) as pending FROM todos WHERE status = "pending"')
+    cursor.execute("SELECT COUNT(*) as pending FROM todos WHERE status = 'pending'")
     pending = cursor.fetchone()['pending']
 
     # Today's tasks
@@ -494,7 +494,7 @@ def get_stats():
     cursor.execute('''
         SELECT COUNT(*) as today_completed
         FROM todos
-        WHERE status = "completed"
+        WHERE status = 'completed'
         AND date(completed_at) = ?
     ''', (today,))
     today_completed = cursor.fetchone()['today_completed']
@@ -503,7 +503,7 @@ def get_stats():
     cursor.execute('''
         SELECT COUNT(*) as overdue
         FROM todos
-        WHERE status = "pending"
+        WHERE status = 'pending'
         AND deadline < ?
     ''', (datetime.now().isoformat(),))
     overdue = cursor.fetchone()['overdue']
