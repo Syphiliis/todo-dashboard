@@ -101,6 +101,11 @@ def get_stats() -> dict:
     return api_call('GET', 'stats')
 
 
+def get_roadmap() -> list:
+    """Récupère la roadmap."""
+    return api_call('GET', 'roadmap')
+
+
 # =============================================================================
 # PARSING INTELLIGENT AVEC CLAUDE (optimisé tokens)
 # =============================================================================
@@ -232,6 +237,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "`fait script LLM` ou `/done 1`\n\n"
         "📋 **Voir les tâches:**\n"
         "`/list` ou `liste`\n\n"
+        "🗺️ **Roadmap:**\n"
+        "`/roadmap`\n\n"
         "✍️ **Générer du contenu:**\n"
         "`/content IA souveraine`\n\n"
         "💡 Écris-moi naturellement!",
@@ -296,6 +303,42 @@ async def cmd_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 **Progression: {stats['completion_rate']}%**
 {'🟩' * int(stats['completion_rate'] / 10)}{'⬜' * (10 - int(stats['completion_rate'] / 10))}"""
+
+    await update.message.reply_text(msg, parse_mode='Markdown')
+
+
+async def cmd_roadmap(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handler /roadmap - Affiche la roadmap"""
+    items = get_roadmap()
+
+    if not items or 'error' in items:
+        await update.message.reply_text("❌ Erreur de connexion au dashboard")
+        return
+
+    if len(items) == 0:
+        await update.message.reply_text("🗺️ **Roadmap vide!**\nAjoute des objectifs via le dashboard.")
+        return
+
+    # Grouper par type
+    mid_term = [i for i in items if i['type'] == 'mid_term']
+    long_term = [i for i in items if i['type'] == 'long_term']
+
+    msg = "🗺️ **Roadmap:**\n\n"
+
+    if mid_term:
+        msg += "📅 **Mi-terme (3-6 mois):**\n"
+        for i in mid_term:
+            status = {'in_progress': '🔄', 'completed': '✅', 'not_started': '⏳'}.get(i['status'], '➖')
+            target = f" (date: {i['target_date']})" if i['target_date'] else ""
+            msg += f"  {status} {i['title']}{target}\n"
+        msg += "\n"
+
+    if long_term:
+        msg += "🎯 **Long-terme (6+ mois):**\n"
+        for i in long_term:
+            status = {'in_progress': '🔄', 'completed': '✅', 'not_started': '⏳'}.get(i['status'], '➖')
+            target = f" (date: {i['target_date']})" if i['target_date'] else ""
+            msg += f"  {status} {i['title']}{target}\n"
 
     await update.message.reply_text(msg, parse_mode='Markdown')
 
@@ -567,6 +610,7 @@ def main():
     app.add_handler(CommandHandler("emails", cmd_emails))
     app.add_handler(CommandHandler("list", cmd_list))
     app.add_handler(CommandHandler("stats", cmd_stats))
+    app.add_handler(CommandHandler("roadmap", cmd_roadmap))
     app.add_handler(CommandHandler("content", cmd_content))
     app.add_handler(CommandHandler("add", cmd_add))
     app.add_handler(CommandHandler("done", cmd_done))

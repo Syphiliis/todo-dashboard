@@ -207,13 +207,17 @@ def fetch_dashboard_todos() -> dict:
 
         stats_response = requests.get(f"{DASHBOARD_API_URL}/stats", timeout=10)
         stats = stats_response.json() if stats_response.status_code == 200 else {}
+        
+        daily_response = requests.get(f"{DASHBOARD_API_URL}/daily-content", timeout=10)
+        daily_content = daily_response.json() if daily_response.status_code == 200 and 'error' not in daily_response.json() else {}
 
         return {
             'todos': todos,
-            'stats': stats
+            'stats': stats,
+            'daily_content': daily_content
         }
     except Exception as e:
-        return {'error': str(e), 'todos': [], 'stats': {}}
+        return {'error': str(e), 'todos': [], 'stats': {}, 'daily_content': {}}
 
 
 # =============================================================================
@@ -232,6 +236,14 @@ def generate_daily_briefing() -> str:
 
     # 2. Préparer le contexte (compact pour économiser les tokens)
     context_parts = []
+
+    # Daily Content (Citation/Fait)
+    daily_content = dashboard_data.get('daily_content', {})
+    if daily_content:
+        quote = daily_content.get('quote')
+        author = daily_content.get('quote_author')
+        if quote:
+            context_parts.append(f"CITATION: \"{quote}\" — {author}")
 
     # Tâches
     todos = dashboard_data.get('todos', [])
@@ -288,12 +300,14 @@ User: Alexandre, CPO EasyNode (IA souveraine)
 {context}
 
 Génère un briefing matinal en 5-8 lignes:
-1. Salutation + météo productivité (basée sur charge)
-2. Top 3 priorités du jour
-3. Emails nécessitant attention (si pertinent)
-4. Conseil du jour
+1. Salutation + météo productivité
+2. Citation inspirante (si fournie)
+3. Top priorités
+4. Emails (si pertinent)
+5. Conseil du jour
 
 Sois direct, motivant, concis."""
+
 
     try:
         response = claude.messages.create(
