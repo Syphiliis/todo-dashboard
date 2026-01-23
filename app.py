@@ -346,15 +346,168 @@ def check_dashboard_access():
     if request.path.startswith('/static/'):
         return None
     
-    # Check token in query params or session
+    # Skip login page itself
+    if request.path == '/login' or request.path == '/auth':
+        return None
+    
+    # Check token in query params or cookie
     token = request.args.get('token') or request.cookies.get('dashboard_token')
     if token != DASHBOARD_ACCESS_TOKEN:
-        return "🔒 Accès refusé. Token invalide ou manquant.", 401
+        # Redirect to login page instead of showing error
+        from flask import redirect, url_for
+        return redirect(url_for('login'))
     
     return None
 
 
 # ============== API Routes ==============
+
+@app.route('/login')
+def login():
+    """Login page for token authentication."""
+    return '''
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔒 Alex Todo Dashboard - Login</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 400px;
+            width: 100%;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        p {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            color: #555;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        input[type="password"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>🔒 Dashboard Login</h1>
+        <p>Entre ton token d'accès</p>
+        
+        <div class="error" id="error">Token invalide</div>
+        
+        <form id="loginForm">
+            <div class="input-group">
+                <label for="token">Token d'accès</label>
+                <input type="password" id="token" name="token" placeholder="Entre ton token secret" required autofocus>
+            </div>
+            <button type="submit">🚀 Accéder au Dashboard</button>
+        </form>
+    </div>
+    
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const token = document.getElementById('token').value;
+            const error = document.getElementById('error');
+            
+            try {
+                const response = await fetch('/auth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+                
+                if (response.ok) {
+                    window.location.href = '/';
+                } else {
+                    error.style.display = 'block';
+                    setTimeout(() => error.style.display = 'none', 3000);
+                }
+            } catch (err) {
+                error.textContent = 'Erreur de connexion';
+                error.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
+    '''
+
+
+@app.route('/auth', methods=['POST'])
+def authenticate():
+    """Authenticate with token and set cookie."""
+    data = request.json
+    token = data.get('token')
+    
+    if token == DASHBOARD_ACCESS_TOKEN:
+        response = jsonify({'success': True})
+        response.set_cookie('dashboard_token', DASHBOARD_ACCESS_TOKEN, max_age=86400, httponly=True)
+        return response
+    
+    return jsonify({'success': False}), 401
+
 
 @app.route('/')
 def index():
