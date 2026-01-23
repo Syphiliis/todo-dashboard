@@ -102,20 +102,44 @@ def api_call(method: str, endpoint: str, data: dict = None) -> dict:
         return {'error': str(e)}
 
 
+def format_guide_as_description(result: dict) -> str:
+    """Format AI analysis result as a description with guide."""
+    parts = []
+    
+    # Add time estimate
+    if result.get('time_estimate'):
+        parts.append(f"⏱️ Temps estimé: {result['time_estimate']}")
+    
+    # Add guide
+    if result.get('guide'):
+        parts.append("\n🧭 Guide de réalisation:")
+        for i, step in enumerate(result['guide'], 1):
+            parts.append(f"   {i}. {step}")
+    
+    return '\n'.join(parts) if parts else None
+
+
 def get_todos(status: str = None) -> list:
     """Récupère les tâches."""
     endpoint = f"todos?status={status}" if status else "todos"
     return api_call('GET', endpoint)
 
 
-def create_todo(title: str, category: str = 'easynode', priority: str = 'normal', deadline: str = None) -> dict:
+def create_todo(title: str, category: str = 'easynode', priority: str = 'normal', deadline: str = None, description: str = None, time_estimate: str = None) -> dict:
     """Crée une nouvelle tâche."""
-    return api_call('POST', 'todos', {
+    data = {
         'title': title,
         'category': category,
         'priority': priority,
         'deadline': deadline
-    })
+    }
+    if description:
+        data['description'] = description
+    if time_estimate:
+        # Add time estimate to description if not already included
+        if description and time_estimate not in description:
+            data['description'] = f"⏱️ Temps estimé: {time_estimate}\n\n{description}"
+    return api_call('POST', 'todos', data)
 
 
 def update_todo(todo_id: int, data: dict) -> dict:
@@ -707,11 +731,14 @@ async def process_smart_add_task(update: Update, message: str):
     
     else:
         # Pas de questions, créer directement la tâche
+        description = format_guide_as_description(result)
         todo = create_todo(
             title=result.get('title', message),
             category=result.get('category', 'easynode'),
             priority=result.get('priority', 'normal'),
-            deadline=result.get('deadline')
+            deadline=result.get('deadline'),
+            description=description,
+            time_estimate=result.get('time_estimate')
         )
         
         if 'error' in todo:
@@ -755,11 +782,14 @@ async def handle_pending_task_response(update: Update, message: str) -> bool:
     if message.lower().strip() in ['ok', 'oui', 'yes', 'valide', 'valider', 'go', '👍']:
         # Créer la tâche avec les valeurs proposées
         result = pending['proposed_task']
+        description = format_guide_as_description(result)
         todo = create_todo(
             title=result.get('title', pending['original_message']),
             category=result.get('category', 'easynode'),
             priority=result.get('priority', 'normal'),
-            deadline=result.get('deadline')
+            deadline=result.get('deadline'),
+            description=description,
+            time_estimate=result.get('time_estimate')
         )
         
         del pending_tasks[chat_id]
@@ -800,11 +830,14 @@ async def handle_pending_task_response(update: Update, message: str) -> bool:
         return True
     
     # Créer la tâche finale
+    description = format_guide_as_description(final_result)
     todo = create_todo(
         title=final_result.get('title', pending['proposed_task'].get('title', '')),
         category=final_result.get('category', 'easynode'),
         priority=final_result.get('priority', 'normal'),
-        deadline=final_result.get('deadline')
+        deadline=final_result.get('deadline'),
+        description=description,
+        time_estimate=final_result.get('time_estimate')
     )
     
     if 'error' in todo:

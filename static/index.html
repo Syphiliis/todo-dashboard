@@ -346,6 +346,22 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #475569;
         }
+
+        .todo-description {
+            margin-top: 0.5rem;
+            padding: 0.75rem;
+            background: rgba(100, 116, 139, 0.1);
+            border-left: 3px solid var(--accent-primary);
+            border-radius: 6px;
+            font-size: 0.8rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            white-space: pre-line;
+        }
+
+        .todo-description strong {
+            color: var(--text-primary);
+        }
     </style>
 </head>
 
@@ -1072,6 +1088,16 @@
             }
         }
 
+        function formatDescription(description) {
+            if (!description) return '';
+
+            // Convert markdown-style formatting to HTML with emoji highlighting
+            return description
+                .replace(/⏱️/g, '<strong>⏱️</strong>')
+                .replace(/🧭/g, '<strong>🧭</strong>')
+                .replace(/(\d+)\./g, '<strong>$1.</strong>');
+        }
+
         async function deleteTodo(id) {
             if (!confirm('Supprimer cette tâche ?')) return;
 
@@ -1154,6 +1180,9 @@
                     <div class="todo-checkbox ${isCompleted ? 'checked' : ''}" onclick="toggleTodo(${todo.id}, '${todo.status}')"></div>
                     <div class="todo-content">
                         <div class="todo-title">${todo.title}</div>
+                        ${todo.description ? `
+                            <div class="todo-description">${formatDescription(todo.description)}</div>
+                        ` : ''}
                         <div class="todo-meta">
                             <span>${categoryEmoji} ${todo.category}</span>
                             ${deadlineStr ? `<span>⏳ ${deadlineStr}</span>` : ''}
