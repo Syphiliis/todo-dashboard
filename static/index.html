@@ -1410,39 +1410,76 @@
 
         async function handleRoadmapFormSubmit(e) {
             e.preventDefault();
+            console.log("Roadmap form submitted");
 
+            // Récupérer les données
             const id = document.getElementById('roadmapItemId').value;
+            const title = document.getElementById('roadmapTitle').value;
+            const description = document.getElementById('roadmapDescription').value;
+            const type = document.getElementById('roadmapType').value;
+            const status = document.getElementById('roadmapStatus').value;
+            const targetDate = document.getElementById('roadmapTargetDate').value;
+
+            console.log("Data:", { id, title, description, type, status, targetDate });
+
+            // Validation basique
+            if (!title) {
+                alert("Le titre est obligatoire");
+                return;
+            }
+
             const data = {
-                title: document.getElementById('roadmapTitle').value,
-                description: document.getElementById('roadmapDescription').value,
-                type: document.getElementById('roadmapType').value,
-                status: document.getElementById('roadmapStatus').value,
-                target_date: document.getElementById('roadmapTargetDate').value || null
+                title: title,
+                description: description,
+                type: type,
+                status: status,
+                target_date: targetDate || null
             };
 
             try {
+                let response;
                 if (id) {
-                    const response = await fetch(`${API_URL}/api/roadmap/${id}`, {
+                    console.log("Updating item", id);
+                    response = await fetch(`${API_URL}/api/roadmap/${id}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(data)
                     });
-                    const updated = await response.json();
-                    const index = roadmapItems.findIndex(i => i.id === parseInt(id));
-                    if (index !== -1) roadmapItems[index] = updated;
                 } else {
-                    const response = await fetch(`${API_URL}/api/roadmap`, {
+                    console.log("Creating new item");
+                    response = await fetch(`${API_URL}/api/roadmap`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(data)
                     });
-                    const newItem = await response.json();
-                    roadmapItems.unshift(newItem);
                 }
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Erreur API: ${response.status} ${errorText}`);
+                }
+
+                const result = await response.json();
+                console.log("Success:", result);
+
+                if (id) {
+                    const index = roadmapItems.findIndex(i => i.id === parseInt(id));
+                    if (index !== -1) roadmapItems[index] = result;
+                } else {
+                    roadmapItems.unshift(result);
+                }
+
                 renderRoadmap();
                 closeRoadmapModal();
+                // Feedback visuel
+                const btn = document.querySelector('#roadmapForm button[type="submit"]');
+                const originalText = btn.textContent;
+                btn.textContent = "Enregistré !";
+                setTimeout(() => btn.textContent = originalText, 2000);
+
             } catch (error) {
                 console.error('Error saving roadmap item:', error);
+                alert(`Erreur lors de l'enregistrement: ${error.message}`);
             }
         }
 
