@@ -516,7 +516,7 @@ def authenticate():
 @app.route('/')
 def index():
     """Serve the dashboard."""
-    response = send_from_directory('static', 'index.html')
+    response = send_from_directory(app.static_folder, 'index.html')
     # Set cookie if valid token in URL (for subsequent requests)
     if DASHBOARD_ACCESS_TOKEN and request.args.get('token') == DASHBOARD_ACCESS_TOKEN:
         response.set_cookie('dashboard_token', DASHBOARD_ACCESS_TOKEN, max_age=86400, httponly=True)
@@ -1187,5 +1187,5 @@ def get_calendar():
 
 
 if __name__ == '__main__':
-    port = int(os.getenv('PORT', 5000))
+    port = int(os.getenv('PORT', 5001))
     app.run(host='0.0.0.0', port=port, debug=True)

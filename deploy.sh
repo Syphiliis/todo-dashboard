@@ -23,7 +23,7 @@ After=network.target
 User=$USER
 WorkingDirectory=$(pwd)
 Environment="PATH=$(pwd)/venv/bin"
-ExecStart=$(pwd)/venv/bin/gunicorn -w 2 -b 0.0.0.0:5000 src.app:app
+ExecStart=$(pwd)/venv/bin/gunicorn -w 2 -b 0.0.0.0:5001 src.app:app
 Restart=always
 
 [Install]
@@ -36,7 +36,7 @@ sudo systemctl enable todo-dashboard
 sudo systemctl start todo-dashboard
 
 echo "✅ Dashboard déployé!"
-echo "📊 Accessible sur http://$(hostname -I | awk '{print $1}'):5000"
+echo "📊 Accessible sur http://$(hostname -I | awk '{print $1}'):5001"
 echo ""
 echo "Commandes utiles:"
 echo "  sudo systemctl status todo-dashboard  # Voir le statut"

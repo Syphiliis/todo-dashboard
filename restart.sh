@@ -59,13 +59,13 @@ if [ ! -z "$BOT_PIDS" ]; then
     done
 fi
 
-# Libérer le port 5000 (avec fuser si disponible, sinon lsof)
+# Libérer le port 5001 (avec fuser si disponible, sinon lsof)
 if command -v fuser &> /dev/null; then
-    fuser -k 5000/tcp 2>/dev/null && echo "  - Port 5000 libéré (fuser)"
+    fuser -k 5001/tcp 2>/dev/null && echo "  - Port 5001 libéré (fuser)"
 else
-    PORT_PID=$(lsof -ti:5000 2>/dev/null)
+    PORT_PID=$(lsof -ti:5001 2>/dev/null)
     if [ ! -z "$PORT_PID" ]; then
-        kill -9 $PORT_PID && echo "  - Port 5000 libéré ($PORT_PID)"
+        kill -9 $PORT_PID && echo "  - Port 5001 libéré ($PORT_PID)"
     fi
 fi
 
@@ -93,7 +93,7 @@ source venv/bin/activate
 pip install -r requirements.txt > /dev/null 2>&1
 
 # 4. Lancer Dashboard
-echo "🚀 Démarrage Dashboard (port 5000)..."
+echo "🚀 Démarrage Dashboard (port 5001)..."
 nohup python3 -m src.app > app.log 2>&1 &
 APP_PID=$!
 echo "  PID: $APP_PID"
