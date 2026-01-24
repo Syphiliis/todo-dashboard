@@ -15,54 +15,71 @@ fi
 # 2. Tuer brutalement TOUS les processus résiduels (uniquement todo-dashboard)
 echo "🛑 Nettoyage des processus..."
 
-# Obtenir le chemin absolu du dossier actuel
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Chemin fixe du projet sur le VPS
+TODO_DIR="/home/ubuntu/todo-dashboard"
 
-# Tuer Gunicorn (seulement si dans ce dossier)
-pkill -9 -f "gunicorn.*$SCRIPT_DIR" && echo "  - Processus Gunicorn tués"
+# Tuer Gunicorn
+pkill -9 -f "gunicorn.*todo-dashboard" 2>/dev/null && echo "  - Processus Gunicorn tués"
 
-# Tuer TOUS les processus Python app.py et bot.py (avec -9 pour forcer)
-echo "  - Recherche de tous les processus Python dans $SCRIPT_DIR..."
+# Tuer TOUS les processus Python app.py et bot.py liés à todo-dashboard
+echo "  - Recherche de tous les processus todo-dashboard..."
 
-# Méthode 1: pkill avec -9 (force kill) - filtre par chemin
-pkill -9 -f "$SCRIPT_DIR.*app.py" && echo "  - Anciens app.py tués (pkill)"
-pkill -9 -f "$SCRIPT_DIR.*bot.py" && echo "  - Anciens bot.py tués (pkill)"
+# Méthode 1: pkill avec patterns multiples (plus robuste)
+pkill -9 -f "todo-dashboard.*app.py" 2>/dev/null && echo "  - Anciens app.py tués (pkill pattern 1)"
+pkill -9 -f "todo-dashboard.*bot.py" 2>/dev/null && echo "  - Anciens bot.py tués (pkill pattern 1)"
+pkill -9 -f "$TODO_DIR/venv/bin/python.*app.py" 2>/dev/null && echo "  - Anciens app.py tués (pkill pattern 2)"
+pkill -9 -f "$TODO_DIR/venv/bin/python.*bot.py" 2>/dev/null && echo "  - Anciens bot.py tués (pkill pattern 2)"
 
-# Méthode 2: Trouver et tuer manuellement tous les PIDs restants (filtre par chemin)
-APP_PIDS=$(ps aux | grep "python.*$SCRIPT_DIR.*app.py" | grep -v grep | awk '{print $2}')
+# Méthode 2: Recherche par cwd (processus dont le répertoire de travail est todo-dashboard)
+for PID in $(pgrep -f "python.*app.py" 2>/dev/null); do
+    if ls -l /proc/$PID/cwd 2>/dev/null | grep -q "todo-dashboard"; then
+        kill -9 $PID 2>/dev/null && echo "  - app.py tué via cwd check: $PID"
+    fi
+done
+for PID in $(pgrep -f "python.*bot.py" 2>/dev/null); do
+    if ls -l /proc/$PID/cwd 2>/dev/null | grep -q "todo-dashboard"; then
+        kill -9 $PID 2>/dev/null && echo "  - bot.py tué via cwd check: $PID"
+    fi
+done
+
+# Méthode 3: Tuer par PIDs trouvés avec grep large
+APP_PIDS=$(ps aux | grep -E "(todo-dashboard.*app\.py|app\.py.*todo-dashboard)" | grep -v grep | awk '{print $2}')
 if [ ! -z "$APP_PIDS" ]; then
-    echo "  - Processus app.py restants trouvés: $APP_PIDS"
+    echo "  - Processus app.py restants: $APP_PIDS"
     for PID in $APP_PIDS; do
         kill -9 $PID 2>/dev/null && echo "    Tué: $PID"
     done
 fi
 
-BOT_PIDS=$(ps aux | grep "python.*$SCRIPT_DIR.*bot.py" | grep -v grep | awk '{print $2}')
+BOT_PIDS=$(ps aux | grep -E "(todo-dashboard.*bot\.py|bot\.py.*todo-dashboard)" | grep -v grep | awk '{print $2}')
 if [ ! -z "$BOT_PIDS" ]; then
-    echo "  - Processus bot.py restants trouvés: $BOT_PIDS"
+    echo "  - Processus bot.py restants: $BOT_PIDS"
     for PID in $BOT_PIDS; do
         kill -9 $PID 2>/dev/null && echo "    Tué: $PID"
     done
 fi
 
-# Tuer tout processus sur le port 5000
-PORT_PID=$(lsof -ti:5000 2>/dev/null)
-if [ ! -z "$PORT_PID" ]; then
-    kill -9 $PORT_PID && echo "  - Processus sur port 5000 tué ($PORT_PID)"
+# Libérer le port 5000 (avec fuser si disponible, sinon lsof)
+if command -v fuser &> /dev/null; then
+    fuser -k 5000/tcp 2>/dev/null && echo "  - Port 5000 libéré (fuser)"
+else
+    PORT_PID=$(lsof -ti:5000 2>/dev/null)
+    if [ ! -z "$PORT_PID" ]; then
+        kill -9 $PORT_PID && echo "  - Port 5000 libéré ($PORT_PID)"
+    fi
 fi
 
 # Attendre que tout soit bien terminé
 sleep 3
 
-# Vérification finale (uniquement pour ce dossier)
-REMAINING_BOTS=$(ps aux | grep "python.*$SCRIPT_DIR.*bot.py" | grep -v grep | wc -l)
-REMAINING_APPS=$(ps aux | grep "python.*$SCRIPT_DIR.*app.py" | grep -v grep | wc -l)
+# Vérification finale
+REMAINING=$(ps aux | grep -E "todo-dashboard.*(app|bot)\.py" | grep -v grep | wc -l)
 
-if [ $REMAINING_BOTS -eq 0 ] && [ $REMAINING_APPS -eq 0 ]; then
+if [ $REMAINING -eq 0 ]; then
     echo "✅ Tous les processus todo-dashboard ont été arrêtés"
 else
-    echo "⚠️  Attention: $REMAINING_BOTS bot(s) et $REMAINING_APPS app(s) encore en cours dans $SCRIPT_DIR"
-    ps aux | grep "python.*$SCRIPT_DIR.*\(app\|bot\).py" | grep -v grep
+    echo "⚠️  Attention: $REMAINING processus encore en cours"
+    ps aux | grep -E "todo-dashboard.*(app|bot)\.py" | grep -v grep
 fi
 
 
