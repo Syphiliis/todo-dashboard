@@ -21,39 +21,39 @@ TODO_DIR="/home/ubuntu/todo-dashboard"
 # Tuer Gunicorn
 pkill -9 -f "gunicorn.*todo-dashboard" 2>/dev/null && echo "  - Processus Gunicorn tués"
 
-# Tuer TOUS les processus Python app.py et bot.py liés à todo-dashboard
+# Tuer TOUS les processus Python src.app et src.bot liés à todo-dashboard
 echo "  - Recherche de tous les processus todo-dashboard..."
 
 # Méthode 1: pkill avec patterns multiples (plus robuste)
-pkill -9 -f "todo-dashboard.*app.py" 2>/dev/null && echo "  - Anciens app.py tués (pkill pattern 1)"
-pkill -9 -f "todo-dashboard.*bot.py" 2>/dev/null && echo "  - Anciens bot.py tués (pkill pattern 1)"
-pkill -9 -f "$TODO_DIR/venv/bin/python.*app.py" 2>/dev/null && echo "  - Anciens app.py tués (pkill pattern 2)"
-pkill -9 -f "$TODO_DIR/venv/bin/python.*bot.py" 2>/dev/null && echo "  - Anciens bot.py tués (pkill pattern 2)"
+pkill -9 -f "todo-dashboard.*src.app" 2>/dev/null && echo "  - Anciens src.app tués (pkill pattern 1)"
+pkill -9 -f "todo-dashboard.*src.bot" 2>/dev/null && echo "  - Anciens src.bot tués (pkill pattern 1)"
+pkill -9 -f "$TODO_DIR/venv/bin/python.*src.app" 2>/dev/null && echo "  - Anciens src.app tués (pkill pattern 2)"
+pkill -9 -f "$TODO_DIR/venv/bin/python.*src.bot" 2>/dev/null && echo "  - Anciens src.bot tués (pkill pattern 2)"
 
 # Méthode 2: Recherche par cwd (processus dont le répertoire de travail est todo-dashboard)
-for PID in $(pgrep -f "python.*app.py" 2>/dev/null); do
+for PID in $(pgrep -f "python.*src.app" 2>/dev/null); do
     if ls -l /proc/$PID/cwd 2>/dev/null | grep -q "todo-dashboard"; then
-        kill -9 $PID 2>/dev/null && echo "  - app.py tué via cwd check: $PID"
+        kill -9 $PID 2>/dev/null && echo "  - src.app tué via cwd check: $PID"
     fi
 done
-for PID in $(pgrep -f "python.*bot.py" 2>/dev/null); do
+for PID in $(pgrep -f "python.*src.bot" 2>/dev/null); do
     if ls -l /proc/$PID/cwd 2>/dev/null | grep -q "todo-dashboard"; then
-        kill -9 $PID 2>/dev/null && echo "  - bot.py tué via cwd check: $PID"
+        kill -9 $PID 2>/dev/null && echo "  - src.bot tué via cwd check: $PID"
     fi
 done
 
 # Méthode 3: Tuer par PIDs trouvés avec grep large
-APP_PIDS=$(ps aux | grep -E "(todo-dashboard.*app\.py|app\.py.*todo-dashboard)" | grep -v grep | awk '{print $2}')
+APP_PIDS=$(ps aux | grep -E "(todo-dashboard.*src\.app|src\.app.*todo-dashboard)" | grep -v grep | awk '{print $2}')
 if [ ! -z "$APP_PIDS" ]; then
-    echo "  - Processus app.py restants: $APP_PIDS"
+    echo "  - Processus src.app restants: $APP_PIDS"
     for PID in $APP_PIDS; do
         kill -9 $PID 2>/dev/null && echo "    Tué: $PID"
     done
 fi
 
-BOT_PIDS=$(ps aux | grep -E "(todo-dashboard.*bot\.py|bot\.py.*todo-dashboard)" | grep -v grep | awk '{print $2}')
+BOT_PIDS=$(ps aux | grep -E "(todo-dashboard.*src\.bot|src\.bot.*todo-dashboard)" | grep -v grep | awk '{print $2}')
 if [ ! -z "$BOT_PIDS" ]; then
-    echo "  - Processus bot.py restants: $BOT_PIDS"
+    echo "  - Processus src.bot restants: $BOT_PIDS"
     for PID in $BOT_PIDS; do
         kill -9 $PID 2>/dev/null && echo "    Tué: $PID"
     done
@@ -73,13 +73,13 @@ fi
 sleep 3
 
 # Vérification finale
-REMAINING=$(ps aux | grep -E "todo-dashboard.*(app|bot)\.py" | grep -v grep | wc -l)
+REMAINING=$(ps aux | grep -E "todo-dashboard.*src\.(app|bot)" | grep -v grep | wc -l)
 
 if [ $REMAINING -eq 0 ]; then
     echo "✅ Tous les processus todo-dashboard ont été arrêtés"
 else
     echo "⚠️  Attention: $REMAINING processus encore en cours"
-    ps aux | grep -E "todo-dashboard.*(app|bot)\.py" | grep -v grep
+    ps aux | grep -E "todo-dashboard.*src\.(app|bot)" | grep -v grep
 fi
 
 
@@ -94,13 +94,13 @@ pip install -r requirements.txt > /dev/null 2>&1
 
 # 4. Lancer Dashboard
 echo "🚀 Démarrage Dashboard (port 5000)..."
-nohup python3 app.py > app.log 2>&1 &
+nohup python3 -m src.app > app.log 2>&1 &
 APP_PID=$!
 echo "  PID: $APP_PID"
 
 # 5. Lancer Bot Telegram
 echo "🤖 Démarrage Bot Telegram..."
-nohup python3 bot.py > bot.log 2>&1 &
+nohup python3 -m src.bot > bot.log 2>&1 &
 BOT_PID=$!
 echo "  PID: $BOT_PID"
 

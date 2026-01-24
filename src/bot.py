@@ -589,7 +589,7 @@ async def cmd_briefing(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         # Import dynamique pour éviter les erreurs si Gmail pas configuré
-        from assistant_agent import what_should_i_do
+        from src.agents.assistant_agent import what_should_i_do
         briefing = what_should_i_do()
         await update.message.reply_text(briefing, parse_mode='Markdown')
     except ImportError:
@@ -605,7 +605,7 @@ async def cmd_emails(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("📬 Vérification des emails...", parse_mode='Markdown')
 
     try:
-        from assistant_agent import check_emails_summary
+        from src.agents.assistant_agent import check_emails_summary
         summary = check_emails_summary()
         await update.message.reply_text(summary, parse_mode='Markdown')
     except ImportError:

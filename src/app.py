@@ -17,7 +17,7 @@ import anthropic
 
 load_dotenv()
 
-app = Flask(__name__, static_folder='static')
+app = Flask(__name__, static_folder='../static')
 CORS(app)
 
 # Configuration
