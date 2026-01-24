@@ -750,6 +750,9 @@
                         <button type="button"
                             class="filter-tab px-4 py-1.5 rounded-md text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-all"
                             data-status="completed">Terminées</button>
+                        <button type="button"
+                            class="filter-tab px-4 py-1.5 rounded-md text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-all"
+                            data-status="archived">Archivées</button>
                     </div>
                 </div>
                 <div class="p-6 flex-grow relative z-10">
@@ -973,10 +976,18 @@
             // Status filters
             document.querySelectorAll('.filter-tab').forEach(tab => {
                 tab.addEventListener('click', () => {
+                    const wasArchived = currentFilter.status === 'archived';
+                    const isArchived = tab.dataset.status === 'archived';
+
                     document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
                     tab.classList.add('active');
                     currentFilter.status = tab.dataset.status;
-                    renderTodos();
+
+                    if (wasArchived || isArchived) {
+                        loadTodos();
+                    } else {
+                        renderTodos();
+                    }
                 });
             });
 
@@ -1027,7 +1038,11 @@
         // API Functions
         async function loadTodos() {
             try {
-                const response = await fetch(`${API_URL}/api/todos`);
+                let url = `${API_URL}/api/todos`;
+                if (currentFilter.status === 'archived') {
+                    url += '?archived=1';
+                }
+                const response = await fetch(url);
                 todos = await response.json();
                 renderTodos();
                 updateCategoryCounts();
@@ -1112,6 +1127,11 @@
             }
         }
 
+        async function archiveTodo(id) {
+            if (!confirm('Archiver cette tâche ?')) return;
+            await updateTodo(id, { archived: 1 });
+        }
+
         async function sendDailySummary() {
             try {
                 await fetch(`${API_URL}/api/daily-summary`, { method: 'POST' });
@@ -1127,9 +1147,17 @@
             let filtered = [...todos];
 
             // Apply filters
-            if (currentFilter.status !== 'all') {
-                filtered = filtered.filter(t => t.status === currentFilter.status);
+            if (currentFilter.status === 'archived') {
+                filtered = filtered.filter(t => t.archived === 1);
+            } else {
+                // Default view: not archived
+                filtered = filtered.filter(t => !t.archived);
+
+                if (currentFilter.status !== 'all') {
+                    filtered = filtered.filter(t => t.status === currentFilter.status);
+                }
             }
+
             if (currentFilter.category !== 'all') {
                 filtered = filtered.filter(t => t.category === currentFilter.category);
             }
@@ -1190,6 +1218,11 @@
                     </div>
                     <span class="priority-badge ${priorityClass}">${todo.priority}</span>
                     <div class="todo-actions">
+                        ${isCompleted && !todo.archived ? `
+                        <button class="action-btn" onclick="archiveTodo(${todo.id})" title="Archiver">
+                            <span class="material-icons-round text-sm">inventory_2</span>
+                        </button>
+                        ` : ''}
                         <button class="action-btn" onclick="editTodo(${todo.id})">✏️</button>
                         <button class="action-btn delete" onclick="deleteTodo(${todo.id})">🗑️</button>
                     </div>
@@ -1253,7 +1286,12 @@
                     document.getElementById('todoCategory').value = todo.category;
                     document.getElementById('todoPriority').value = todo.priority;
                     if (todo.deadline) {
-                        document.getElementById('todoDeadline').value = todo.deadline.slice(0, 16);
+                        try {
+                            // Ensure deadline is in correct format for datetime-local (YYYY-MM-DDThh:mm)
+                            document.getElementById('todoDeadline').value = todo.deadline.slice(0, 16);
+                        } catch (e) {
+                            console.error("Date error", e);
+                        }
                     }
                 }
             } else {

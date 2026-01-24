@@ -141,6 +141,10 @@ def init_db():
         conn.execute('ALTER TABLE todos ADD COLUMN parent_todo_id INTEGER')
     except:
         pass
+    try:
+        conn.execute('ALTER TABLE todos ADD COLUMN archived INTEGER DEFAULT 0')
+    except:
+        pass
     conn.commit()
     conn.close()
 
@@ -527,14 +531,23 @@ def get_todos():
 
     status = request.args.get('status')
     category = request.args.get('category')
+    archived = request.args.get('archived')
 
     query = 'SELECT * FROM todos WHERE 1=1'
     params = []
 
-    if status:
+    if archived == '1':
+        query += ' AND archived = 1'
+    elif archived == '0':
+        query += ' AND archived = 0'
+    else:
+        # Default behavior: hide archived unless specifically requested
+        query += ' AND archived = 0'
+
+    if status and status != 'all':
         query += ' AND status = ?'
         params.append(status)
-    if category:
+    if category and category != 'all':
         query += ' AND category = ?'
         params.append(category)
 
@@ -600,7 +613,7 @@ def update_todo(todo_id):
     updates = []
     params = []
 
-    for field in ['title', 'description', 'category', 'priority', 'status', 'deadline']:
+    for field in ['title', 'description', 'category', 'priority', 'status', 'deadline', 'archived']:
         if field in data:
             updates.append(f'{field} = ?')
             params.append(data[field])
