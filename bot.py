@@ -999,9 +999,13 @@ def main():
     # Handler pour messages naturels
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-    # Démarrer
+    # Démarrer - drop_pending_updates évite les conflits avec d'anciennes connexions
     logger.info("Bot started! Listening for messages...")
-    app.run_polling(allowed_updates=Update.ALL_TYPES)
+    app.run_polling(
+        allowed_updates=Update.ALL_TYPES,
+        drop_pending_updates=True,  # Ignore les updates en attente au démarrage
+        poll_interval=1.0,  # Intervalle entre les requêtes (évite les conflits)
+    )
 
 
 if __name__ == '__main__':
