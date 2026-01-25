@@ -34,9 +34,13 @@ CLAUDE_MODEL = os.getenv('CLAUDE_MODEL', 'claude-haiku-4-5-20251001')
 DASHBOARD_API_URL = os.getenv('DASHBOARD_API_URL', 'http://localhost:5000/api')
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
+TIMEZONE = os.getenv('TIMEZONE', 'Europe/Paris')
 
-# Gmail scopes (read-only pour la sécurité)
-GMAIL_SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
+# Google Scopes
+GMAIL_SCOPES = [
+    'https://www.googleapis.com/auth/gmail.readonly',
+    'https://www.googleapis.com/auth/calendar.events'
+]
 
 # Claude client
 claude = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
@@ -84,6 +88,14 @@ def get_gmail_service():
     if not creds:
         return None
     return build('gmail', 'v1', credentials=creds)
+
+
+def get_calendar_service():
+    """Retourne le service Google Calendar API."""
+    creds = get_gmail_credentials()
+    if not creds:
+        return None
+    return build('calendar', 'v3', credentials=creds)
 
 
 def fetch_important_emails(max_results: int = 10, hours_back: int = 24) -> list:
@@ -193,6 +205,196 @@ def get_email_summary(email_id: str) -> str:
         return f"Erreur: {str(e)}"
 
 
+def _build_email_context(emails: list, max_emails: int = 8) -> str:
+    """Construit un contexte compact pour le résumé IA."""
+    context_lines = []
+    for idx, email in enumerate(emails[:max_emails], 1):
+        body_excerpt = email.get('snippet', '')
+        if email.get('id') and (email.get('is_unread') or email.get('is_important')):
+            body_excerpt = get_email_summary(email['id'])
+        body_excerpt = (body_excerpt or '').replace('\n', ' ').strip()
+        if len(body_excerpt) > 600:
+            body_excerpt = body_excerpt[:600] + '...'
+
+        context_lines.append(
+            f"{idx}. From: {email.get('from', 'Unknown')}\n"
+            f"   Subject: {email.get('subject', 'Sans sujet')}\n"
+            f"   Date: {email.get('date', 'N/A')}\n"
+            f"   Body: {body_excerpt}"
+        )
+    return "\n".join(context_lines)
+
+
+def summarize_emails_with_claude(emails: list) -> dict:
+    """Résume les emails et extrait des tâches actionnables via Claude."""
+    if not claude or not emails:
+        return {}
+
+    context = _build_email_context(emails)
+    prompt = f"""Emails:\n{context}\n\nRéponds en JSON:\n{{\n  \"summary\": \"résumé en 3-5 lignes\",\n  \"action_items\": [\n    {{\"title\": \"action concise\", \"due_date\": \"YYYY-MM-DD ou null\", \"priority\": \"urgent|important|normal\"}}\n  ]\n}}\n\nRègles:\n- Les actions doivent être concrètes et déduites des emails.\n- Laisse action_items vide si rien de clair.\n- Réponds uniquement en JSON valide."""
+
+    try:
+        response = claude.messages.create(
+            model=CLAUDE_MODEL,
+            max_tokens=500,
+            system="Tu résumes des emails et identifies des actions concrètes. JSON uniquement.",
+            messages=[{"role": "user", "content": prompt}],
+        )
+
+        text = response.content[0].text.strip()
+        if text.startswith('```'):
+            text = text.replace('```json', '').replace('```', '').strip()
+
+        return json.loads(text)
+    except Exception:
+        return {}
+
+
+# =============================================================================
+# CALENDAR INTEGRATION
+# =============================================================================
+
+def fetch_calendar_events(max_results: int = 10, days_ahead: int = 7) -> list:
+    """
+    Récupère les événements du calendrier pour les prochains X jours.
+    """
+    service = get_calendar_service()
+    if not service:
+        return [{"error": "Calendrier non configuré."}]
+
+    try:
+        now = datetime.utcnow().isoformat() + 'Z'
+        plus_days = (datetime.utcnow() + timedelta(days=days_ahead)).isoformat() + 'Z'
+
+        events_result = service.events().list(
+            calendarId='primary',
+            timeMin=now,
+            timeMax=plus_days,
+            maxResults=max_results,
+            singleEvents=True,
+            orderBy='startTime'
+        ).execute()
+
+        events = events_result.get('items', [])
+        formatted_events = []
+
+        for event in events:
+            start = event['start'].get('dateTime', event['start'].get('date'))
+            # Format: 2026-01-25T20:53:10+01:00
+            try:
+                dt = datetime.fromisoformat(start[:19])
+                start_formatted = dt.strftime('%d/%m %H:%M')
+            except:
+                start_formatted = start
+
+            formatted_events.append({
+                'id': event['id'],
+                'summary': event.get('summary', 'Sans titre'),
+                'start': start_formatted,
+                'htmlLink': event.get('htmlLink')
+            })
+
+        return formatted_events
+
+    except Exception as e:
+        return [{"error": f"Erreur Calendar API: {str(e)}"}]
+
+
+def create_calendar_event(summary: str, start_time: str, end_time: str = None, recurrence: str = None) -> dict:
+    """
+    Crée un événement sur Google Calendar.
+    - recurrence: optionnel, format RRULE (ex: 'RRULE:FREQ=WEEKLY;BYDAY=MO')
+    """
+    service = get_calendar_service()
+    if not service:
+        return {"error": "Calendrier non configuré."}
+
+    try:
+        # Default end time = 1 hour after start
+        if not end_time:
+            dt_start = datetime.fromisoformat(start_time)
+            dt_end = dt_start + timedelta(hours=1)
+            end_time = dt_end.isoformat()
+
+        event = {
+            'summary': summary,
+            'start': {'dateTime': start_time, 'timeZone': TIMEZONE},
+            'end': {'dateTime': end_time, 'timeZone': TIMEZONE},
+        }
+
+        if recurrence:
+            event['recurrence'] = [recurrence]
+
+        event = service.events().insert(calendarId='primary', body=event).execute()
+        return event
+
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def parse_calendar_request(message: str) -> dict:
+    """Parse un message naturel en spécifications d'événement."""
+    if not claude:
+        return {"error": "Claude non configuré"}
+
+    now = datetime.now().strftime('%Y-%m-%d %H:%M')
+    prompt = f"""Date actuelle: {now} ({TIMEZONE})\nMessage: \"{message}\"\n\nRéponds en JSON:\n{{\n  \"summary\": \"titre clair\",\n  \"start_time\": \"YYYY-MM-DDTHH:MM:SS+02:00\",\n  \"end_time\": \"YYYY-MM-DDTHH:MM:SS+02:00 ou null\",\n  \"recurrence\": \"RRULE:FREQ=...\" ou null,\n  \"timezone\": \"{TIMEZONE}\",\n  \"needs_clarification\": false,\n  \"questions\": []\n}}\n\nRègles:\n- Si l'heure n'est pas donnée, propose 09:00 locale.\n- Si récurrence (ex: \"tous les lundis\"), génère une RRULE valide et utilise la prochaine occurrence comme start_time.\n- Si c'est ambigu, mets needs_clarification à true et ajoute 1-2 questions ciblées.\n- Réponds uniquement en JSON valide."""
+
+    try:
+        response = claude.messages.create(
+            model=CLAUDE_MODEL,
+            max_tokens=500,
+            system="Tu converts des demandes d'événements calendrier en données structurées. JSON uniquement.",
+            messages=[{"role": "user", "content": prompt}],
+        )
+
+        text = response.content[0].text.strip()
+        if text.startswith('```'):
+            text = text.replace('```json', '').replace('```', '').strip()
+
+        return json.loads(text)
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def finalize_calendar_request(original: dict, user_response: str) -> dict:
+    """Finalise une demande d'événement après clarification."""
+    if not claude:
+        return {"error": "Claude non configuré"}
+
+    prompt = f"""Demande initiale:\n{json.dumps(original, ensure_ascii=False)}\n\nRéponse utilisateur: \"{user_response}\"\n\nRends un JSON final:\n{{\n  \"summary\": \"titre clair\",\n  \"start_time\": \"YYYY-MM-DDTHH:MM:SS+02:00\",\n  \"end_time\": \"YYYY-MM-DDTHH:MM:SS+02:00 ou null\",\n  \"recurrence\": \"RRULE:FREQ=...\" ou null,\n  \"timezone\": \"{TIMEZONE}\",\n  \"needs_clarification\": false,\n  \"questions\": []\n}}\n\nRéponds uniquement en JSON valide."""
+
+    try:
+        response = claude.messages.create(
+            model=CLAUDE_MODEL,
+            max_tokens=500,
+            system="Tu finalises des demandes d'événements calendrier. JSON uniquement.",
+            messages=[{"role": "user", "content": prompt}],
+        )
+
+        text = response.content[0].text.strip()
+        if text.startswith('```'):
+            text = text.replace('```json', '').replace('```', '').strip()
+
+        return json.loads(text)
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def create_calendar_event_from_message(message: str) -> dict:
+    """Crée un événement calendrier à partir d'une demande en langage naturel."""
+    parsed = parse_calendar_request(message)
+    if parsed.get('error') or parsed.get('needs_clarification'):
+        return parsed
+
+    return create_calendar_event(
+        summary=parsed.get('summary', 'Nouvel événement'),
+        start_time=parsed.get('start_time'),
+        end_time=parsed.get('end_time'),
+        recurrence=parsed.get('recurrence'),
+    )
+
+
 # =============================================================================
 # DASHBOARD INTEGRATION
 # =============================================================================
@@ -233,6 +435,7 @@ def generate_daily_briefing() -> str:
     # 1. Récupérer les données
     dashboard_data = fetch_dashboard_todos()
     emails = fetch_important_emails(max_results=10, hours_back=24)
+    calendar_events = fetch_calendar_events(max_results=10, days_ahead=2)
 
     # 2. Préparer le contexte (compact pour économiser les tokens)
     context_parts = []
@@ -287,6 +490,15 @@ def generate_daily_briefing() -> str:
         context_parts.append(emails_summary)
     elif emails and 'error' in emails[0]:
         context_parts.append(f"EMAILS: {emails[0]['error']}")
+
+    # Calendar
+    if calendar_events and not any('error' in e for e in calendar_events):
+        cal_summary = f"CALENDRIER ({len(calendar_events)} prochains):\n"
+        for e in calendar_events[:5]:
+            cal_summary += f"📅 {e['start']}: {e['summary']}\n"
+        context_parts.append(cal_summary)
+    elif calendar_events and 'error' in calendar_events[0]:
+        context_parts.append(f"CALENDRIER: {calendar_events[0]['error']}")
 
     # 3. Générer le briefing avec Claude (optimisé tokens)
     context = "\n\n".join(context_parts)
@@ -396,6 +608,18 @@ def check_emails_summary() -> str:
 
     if 'error' in emails[0]:
         return f"❌ {emails[0]['error']}"
+
+    ai_summary = summarize_emails_with_claude(emails)
+    if ai_summary.get('summary') or ai_summary.get('action_items'):
+        summary = f"📬 **Résumé IA ({len(emails)} emails)**\n\n{ai_summary.get('summary', '').strip()}\n\n"
+        actions = ai_summary.get('action_items') or []
+        if actions:
+            summary += "**✅ Actions proposées:**\n"
+            for item in actions[:6]:
+                due = f" (due {item.get('due_date')})" if item.get('due_date') else ""
+                priority = item.get('priority', 'normal')
+                summary += f"• [{priority}] {item.get('title')}{due}\n"
+        return summary.strip()
 
     unread = [e for e in emails if e.get('is_unread')]
     important = [e for e in emails if e.get('is_important')]

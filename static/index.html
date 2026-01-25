@@ -95,6 +95,40 @@
             box-shadow: 0 8px 18px rgba(10, 15, 25, 0.35);
         }
 
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.55rem 1rem;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: rgba(148, 163, 184, 0.12);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--text-primary);
+            border-color: rgba(214, 92, 124, 0.35);
+            transform: translateY(-1px);
+        }
+
+        .nav-link.active {
+            color: #0f172a;
+            background: rgba(255, 255, 255, 0.9);
+            border-color: rgba(214, 92, 124, 0.4);
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
+        }
+
+        .dark .nav-link.active {
+            color: #ffffff;
+            background: rgba(51, 65, 85, 0.8);
+        }
+
         .todo-item {
             background: rgba(30, 41, 59, 0.6);
             border: 1px solid rgba(148, 163, 184, 0.12);
@@ -117,6 +151,14 @@
 
         .todo-item.completed .todo-title {
             text-decoration: line-through;
+        }
+
+        .todo-item.archived {
+            opacity: 0.7;
+        }
+
+        .todo-item.archived .todo-title {
+            text-decoration: none;
         }
 
         .todo-checkbox {
@@ -404,6 +446,12 @@
                 </button>
             </div>
         </header>
+        <nav class="flex flex-wrap gap-3 items-center" aria-label="Navigation principale">
+            <a class="nav-link active" href="/">Dashboard</a>
+            <a class="nav-link" href="/projects">Projets</a>
+            <a class="nav-link" href="/dca">DCA</a>
+            <a class="nav-link" href="/archives">Archives</a>
+        </nav>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4" id="section-stats">
             <div
                 class="glass-panel p-5 rounded-xl flex flex-col justify-between hover:translate-y-[-2px] transition-transform duration-300 group cursor-default bg-white dark:bg-indigo-card shadow-sm dark:shadow-none">
@@ -749,10 +797,7 @@
                             data-status="pending">En attente</button>
                         <button type="button"
                             class="filter-tab px-4 py-1.5 rounded-md text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-all"
-                            data-status="completed">Terminées</button>
-                        <button type="button"
-                            class="filter-tab px-4 py-1.5 rounded-md text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-all"
-                            data-status="archived">Archivées</button>
+                            data-status="archived">Archives</button>
                     </div>
                 </div>
                 <div class="p-6 flex-grow relative z-10">
@@ -938,6 +983,7 @@
     <script>
         // State
         let todos = [];
+        let archivedTodos = [];
         let roadmapItems = [];
         let currentRoadmapType = 'mid_term';
         let currentFilter = { status: 'all', category: 'all' };
@@ -983,7 +1029,9 @@
                     tab.classList.add('active');
                     currentFilter.status = tab.dataset.status;
 
-                    if (wasArchived || isArchived) {
+                    if (isArchived) {
+                        loadArchivedTodos();
+                    } else if (wasArchived) {
                         loadTodos();
                     } else {
                         renderTodos();
@@ -1038,16 +1086,22 @@
         // API Functions
         async function loadTodos() {
             try {
-                let url = `${API_URL}/api/todos`;
-                if (currentFilter.status === 'archived') {
-                    url += '?archived=1';
-                }
-                const response = await fetch(url);
+                const response = await fetch(`${API_URL}/api/todos`);
                 todos = await response.json();
                 renderTodos();
                 updateCategoryCounts();
             } catch (error) {
                 console.error('Error loading todos:', error);
+            }
+        }
+
+        async function loadArchivedTodos() {
+            try {
+                const response = await fetch(`${API_URL}/api/todos/archived`);
+                archivedTodos = await response.json();
+                renderTodos();
+            } catch (error) {
+                console.error('Error loading archived todos:', error);
             }
         }
 
@@ -1093,8 +1147,23 @@
                     body: JSON.stringify(data)
                 });
                 const updated = await response.json();
-                const index = todos.findIndex(t => t.id === id);
-                if (index !== -1) todos[index] = updated;
+                if (updated.archived === 1) {
+                    todos = todos.filter(t => t.id !== id);
+                    const archivedIndex = archivedTodos.findIndex(t => t.id === id);
+                    if (archivedIndex !== -1) {
+                        archivedTodos[archivedIndex] = updated;
+                    } else {
+                        archivedTodos.unshift(updated);
+                    }
+                } else {
+                    archivedTodos = archivedTodos.filter(t => t.id !== id);
+                    const index = todos.findIndex(t => t.id === id);
+                    if (index !== -1) {
+                        todos[index] = updated;
+                    } else {
+                        todos.unshift(updated);
+                    }
+                }
                 renderTodos();
                 loadStats();
                 updateCategoryCounts();
@@ -1119,6 +1188,7 @@
             try {
                 await fetch(`${API_URL}/api/todos/${id}`, { method: 'DELETE' });
                 todos = todos.filter(t => t.id !== id);
+                archivedTodos = archivedTodos.filter(t => t.id !== id);
                 renderTodos();
                 loadStats();
                 updateCategoryCounts();
@@ -1127,9 +1197,10 @@
             }
         }
 
-        async function archiveTodo(id) {
-            if (!confirm('Archiver cette tâche ?')) return;
-            await updateTodo(id, { archived: 1 });
+        async function restoreTodo(id) {
+            if (!confirm('Restaurer cette tâche ?')) return;
+            await updateTodo(id, { archived: 0, status: 'pending' });
+            loadTodos();
         }
 
         async function sendDailySummary() {
@@ -1144,7 +1215,8 @@
         // Render Functions
         function renderTodos() {
             const list = document.getElementById('todoList');
-            let filtered = [...todos];
+            const source = currentFilter.status === 'archived' ? archivedTodos : todos;
+            let filtered = [...source];
 
             // Apply filters
             if (currentFilter.status === 'archived') {
@@ -1183,7 +1255,8 @@
 
             list.innerHTML = filtered.map(todo => {
                 const priorityClass = `priority-${todo.priority}`;
-                const isCompleted = todo.status === 'completed';
+                const isArchived = todo.archived === 1;
+                const isCompleted = todo.status === 'completed' && !isArchived;
                 const categoryEmoji = {
                     'easynode': '🚀',
                     'immobilier': '🏯',
@@ -1203,9 +1276,11 @@
                     });
                 }
 
+                const stateClass = isArchived ? 'archived' : (isCompleted ? 'completed' : '');
+                const checkboxClass = isCompleted ? 'checked' : '';
                 return `
-                <div class="todo-item ${isCompleted ? 'completed' : ''}" data-id="${todo.id}">
-                    <div class="todo-checkbox ${isCompleted ? 'checked' : ''}" onclick="toggleTodo(${todo.id}, '${todo.status}')"></div>
+                <div class="todo-item ${stateClass}" data-id="${todo.id}">
+                    <div class="todo-checkbox ${checkboxClass}" onclick="toggleTodo(${todo.id}, '${todo.status}', ${isArchived})"></div>
                     <div class="todo-content">
                         <div class="todo-title">${todo.title}</div>
                         ${todo.description ? `
@@ -1214,13 +1289,14 @@
                         <div class="todo-meta">
                             <span>${categoryEmoji} ${todo.category}</span>
                             ${deadlineStr ? `<span>⏳ ${deadlineStr}</span>` : ''}
+                            ${isArchived ? `<span>📦 Archivée</span>` : ''}
                         </div>
                     </div>
                     <span class="priority-badge ${priorityClass}">${todo.priority}</span>
                     <div class="todo-actions">
-                        ${isCompleted && !todo.archived ? `
-                        <button class="action-btn" onclick="archiveTodo(${todo.id})" title="Archiver">
-                            <span class="material-icons-round text-sm">inventory_2</span>
+                        ${isArchived ? `
+                        <button class="action-btn" onclick="restoreTodo(${todo.id})" title="Restaurer">
+                            <span class="material-icons-round text-sm">restart_alt</span>
                         </button>
                         ` : ''}
                         <button class="action-btn" onclick="editTodo(${todo.id})">✏️</button>
@@ -1250,8 +1326,14 @@
         }
 
         // Actions
-        function toggleTodo(id, currentStatus) {
+        function toggleTodo(id, currentStatus, isArchived) {
+            if (isArchived) return;
             const newStatus = currentStatus === 'completed' ? 'pending' : 'completed';
+            if (newStatus === 'completed') {
+                todos = todos.map(t => t.id === id ? { ...t, status: 'completed', archived: 1 } : t);
+                renderTodos();
+                updateCategoryCounts();
+            }
             updateTodo(id, { status: newStatus });
         }
 

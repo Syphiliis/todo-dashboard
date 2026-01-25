@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html class="dark" lang="fr">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Alex Todo Dashboard · Archives</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&amp;family=Inter:wght@300;400;500;600&amp;display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <style>
+        :root {
+            --bg-primary: #0B1120;
+            --bg-secondary: #1E293B;
+            --bg-card: #334155;
+            --text-primary: #E2E8F0;
+            --text-secondary: #94A3B8;
+            --accent-primary: #D65C7C;
+            --accent-green: #10B981;
+            --accent-orange: #F59E0B;
+            --accent-red: #EF4444;
+            --border-color: #334155;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.55rem 1rem;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: rgba(148, 163, 184, 0.12);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--text-primary);
+            border-color: rgba(214, 92, 124, 0.35);
+            transform: translateY(-1px);
+        }
+
+        .nav-link.active {
+            color: #0f172a;
+            background: rgba(255, 255, 255, 0.9);
+            border-color: rgba(214, 92, 124, 0.4);
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
+        }
+
+        .dark .nav-link.active {
+            color: #ffffff;
+            background: rgba(51, 65, 85, 0.8);
+        }
+
+        .todo-item {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.12);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.95rem 1.1rem;
+        }
+
+        .todo-title {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+            color: var(--text-primary);
+        }
+
+        .todo-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .todo-description {
+            margin-top: 0.5rem;
+            padding: 0.75rem;
+            background: rgba(100, 116, 139, 0.1);
+            border-left: 3px solid var(--accent-primary);
+            border-radius: 6px;
+            font-size: 0.8rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            white-space: pre-line;
+        }
+
+        .priority-badge {
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            border: 1px solid transparent;
+        }
+
+        .priority-urgent {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border-color: rgba(239, 68, 68, 0.35);
+        }
+
+        .priority-important {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+            border-color: rgba(245, 158, 11, 0.35);
+        }
+
+        .priority-normal {
+            background: rgba(148, 163, 184, 0.2);
+            color: var(--text-secondary);
+            border-color: rgba(148, 163, 184, 0.35);
+        }
+
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            background: rgba(15, 23, 42, 0.35);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn:hover {
+            background: rgba(214, 92, 124, 0.2);
+            color: #f8fafc;
+            border-color: rgba(214, 92, 124, 0.4);
+        }
+
+        .action-btn.delete:hover {
+            background: rgba(239, 68, 68, 0.25);
+            border-color: rgba(239, 68, 68, 0.5);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 dark:bg-[#0B1120] text-gray-800 dark:text-text-light font-sans min-h-screen">
+    <div class="fixed top-0 left-0 w-full h-full pointer-events-none z-0 opacity-20 dark:opacity-10"
+        style="background-image: radial-gradient(circle, rgba(214, 92, 124, 0.15) 1px, transparent 1px); background-size: 120px 120px;">
+    </div>
+    <div class="relative z-10 max-w-6xl mx-auto p-6 space-y-8">
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <div class="flex items-center gap-3">
+                    <span class="text-3xl">📦</span>
+                    <h1 class="text-3xl md:text-4xl font-display font-light tracking-wide text-gray-900 dark:text-white">
+                        Archives Todo
+                    </h1>
+                </div>
+                <p class="text-sm text-gray-500 dark:text-text-muted mt-1 ml-1 font-display tracking-widest uppercase text-xs">
+                    Historique des tâches terminées
+                </p>
+            </div>
+            <nav class="flex flex-wrap gap-3 items-center" aria-label="Navigation principale">
+                <a class="nav-link" href="/">Dashboard</a>
+                <a class="nav-link" href="/projects">Projets</a>
+                <a class="nav-link" href="/dca">DCA</a>
+                <a class="nav-link active" href="/archives">Archives</a>
+            </nav>
+        </header>
+
+        <section class="glass-panel rounded-xl p-6">
+            <div class="flex flex-col md:flex-row md:items-center gap-4 mb-6">
+                <div class="flex-1">
+                    <label class="text-xs uppercase tracking-widest text-gray-400" for="searchInput">Recherche</label>
+                    <input id="searchInput" type="text" placeholder="Filtrer par titre..."
+                        class="mt-2 w-full bg-gray-50 dark:bg-indigo-lighter/20 border border-gray-200 dark:border-white/10 rounded-lg py-3 px-4 text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" />
+                </div>
+                <div class="md:w-56">
+                    <label class="text-xs uppercase tracking-widest text-gray-400" for="categoryFilter">Catégorie</label>
+                    <select id="categoryFilter"
+                        class="mt-2 w-full bg-gray-50 dark:bg-indigo-lighter/20 border border-gray-200 dark:border-white/10 rounded-lg py-3 px-4 text-sm text-gray-800 dark:text-gray-200">
+                        <option value="all">Toutes</option>
+                        <option value="easynode">🚀 EasyNode</option>
+                        <option value="immobilier">🏯 Immobilier</option>
+                        <option value="content">📱 Content</option>
+                        <option value="personnel">🎋 Personnel</option>
+                        <option value="admin">📄 Admin</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="space-y-3" id="archiveList">
+                <div class="text-center py-12 text-gray-400 dark:text-gray-500">
+                    <span class="text-4xl mb-3 block">⏳</span>
+                    <p class="text-sm">Chargement des archives...</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        let archivedTodos = [];
+        let currentFilter = { category: 'all', query: '' };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadArchivedTodos();
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                currentFilter.query = e.target.value.toLowerCase();
+                renderArchives();
+            });
+            document.getElementById('categoryFilter').addEventListener('change', (e) => {
+                currentFilter.category = e.target.value;
+                renderArchives();
+            });
+        });
+
+        async function loadArchivedTodos() {
+            try {
+                const response = await fetch('/api/todos/archived');
+                archivedTodos = await response.json();
+                renderArchives();
+            } catch (error) {
+                console.error('Error loading archives:', error);
+            }
+        }
+
+        function renderArchives() {
+            const list = document.getElementById('archiveList');
+            let filtered = [...archivedTodos];
+
+            if (currentFilter.category !== 'all') {
+                filtered = filtered.filter(todo => todo.category === currentFilter.category);
+            }
+            if (currentFilter.query) {
+                filtered = filtered.filter(todo => todo.title.toLowerCase().includes(currentFilter.query));
+            }
+
+            if (filtered.length === 0) {
+                list.innerHTML = `
+                    <div class="text-center py-12 text-gray-400 dark:text-gray-500">
+                        <span class="text-4xl mb-3 block">📦</span>
+                        <p class="text-sm">Aucune tâche archivée pour le moment.</p>
+                    </div>`;
+                return;
+            }
+
+            list.innerHTML = filtered.map(todo => {
+                const priorityClass = `priority-${todo.priority}`;
+                const categoryEmoji = {
+                    'easynode': '🚀',
+                    'immobilier': '🏯',
+                    'content': '📱',
+                    'personnel': '🎋',
+                    'admin': '📄'
+                }[todo.category] || '📋';
+
+                const deadlineStr = todo.deadline
+                    ? new Date(todo.deadline).toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })
+                    : null;
+
+                return `
+                    <div class="todo-item">
+                        <div class="todo-content flex-1">
+                            <div class="todo-title">${todo.title}</div>
+                            ${todo.description ? `<div class="todo-description">${todo.description}</div>` : ''}
+                            <div class="todo-meta">
+                                <span>${categoryEmoji} ${todo.category}</span>
+                                ${deadlineStr ? `<span>⏳ ${deadlineStr}</span>` : ''}
+                                <span>📦 Archivée</span>
+                            </div>
+                        </div>
+                        <span class="priority-badge ${priorityClass}">${todo.priority}</span>
+                        <div class="flex items-center gap-2">
+                            <button class="action-btn" onclick="restoreTodo(${todo.id})" title="Restaurer">
+                                <span class="material-icons-round text-sm">restart_alt</span>
+                            </button>
+                            <button class="action-btn delete" onclick="deleteTodo(${todo.id})" title="Supprimer">
+                                <span class="material-icons-round text-sm">delete</span>
+                            </button>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        async function restoreTodo(id) {
+            if (!confirm('Restaurer cette tâche ?')) return;
+            try {
+                await fetch(`/api/todos/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ archived: 0, status: 'pending' })
+                });
+                archivedTodos = archivedTodos.filter(t => t.id !== id);
+                renderArchives();
+            } catch (error) {
+                console.error('Error restoring todo:', error);
+            }
+        }
+
+        async function deleteTodo(id) {
+            if (!confirm('Supprimer cette tâche définitivement ?')) return;
+            try {
+                await fetch(`/api/todos/${id}`, { method: 'DELETE' });
+                archivedTodos = archivedTodos.filter(t => t.id !== id);
+                renderArchives();
+            } catch (error) {
+                console.error('Error deleting todo:', error);
+            }
+        }
+    </script>
+</body>
+
+</html>

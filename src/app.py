@@ -4,326 +4,30 @@ Alex Todo Dashboard - Backend API
 Dashboard personnel avec notifications Telegram
 """
 
-import os
-import sqlite3
-import json
 from datetime import datetime, timedelta
-from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS
-from dotenv import load_dotenv
+
 import requests
 from apscheduler.schedulers.background import BackgroundScheduler
-import anthropic
+from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
 
-load_dotenv()
+from src.config import DASHBOARD_ACCESS_TOKEN, DCA_BACKEND_URL, PORT, TIMEZONE
+from src.db import get_db, init_db
+from src.services.daily_content import generate_daily_content
+from src.services.reminders import check_deadlines, send_daily_recap
+from src.services.telegram import send_telegram_message
 
 app = Flask(__name__, static_folder='../static')
 CORS(app)
 
-# Configuration
-DATABASE_PATH = os.getenv('DATABASE_PATH', './data/todos.db')
-TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
-TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
-ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY')
-CLAUDE_MODEL = os.getenv('CLAUDE_MODEL', 'claude-haiku-4-5-20251001')
-
-# Security: Token for dashboard access (optional)
-DASHBOARD_ACCESS_TOKEN = os.getenv('DASHBOARD_ACCESS_TOKEN')  # None = no protection
-
-# Claude client
-claude = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY) if ANTHROPIC_API_KEY else None
-
-# Ensure data directory exists
-os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
-
-
-def get_db():
-    """Get database connection."""
-    conn = sqlite3.connect(DATABASE_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
-def init_db():
-    """Initialize database schema."""
-    conn = get_db()
-    conn.executescript('''
-        CREATE TABLE IF NOT EXISTS todos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            description TEXT,
-            category TEXT DEFAULT 'general',
-            priority TEXT DEFAULT 'normal',
-            status TEXT DEFAULT 'pending',
-            deadline DATETIME,
-            reminder_sent INTEGER DEFAULT 0,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            completed_at DATETIME
-        );
-
-        CREATE TABLE IF NOT EXISTS categories (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT UNIQUE NOT NULL,
-            emoji TEXT DEFAULT '📋',
-            color TEXT DEFAULT '#6366f1'
-        );
-
-        CREATE TABLE IF NOT EXISTS roadmap_items (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            description TEXT,
-            type TEXT DEFAULT 'mid_term',
-            status TEXT DEFAULT 'in_progress',
-            target_date DATE,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            completed_at DATETIME
-        );
-
-        CREATE TABLE IF NOT EXISTS daily_content (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            date DATE UNIQUE NOT NULL,
-            quote TEXT NOT NULL,
-            quote_author TEXT,
-            fun_fact TEXT NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-
-        -- Insert default categories
-        INSERT OR IGNORE INTO categories (name, emoji, color) VALUES
-            ('easynode', '🚀', '#3b82f6'),
-            ('immobilier', '🏠', '#10b981'),
-            ('personnel', '👤', '#8b5cf6'),
-            ('content', '📱', '#f59e0b'),
-            ('admin', '📄', '#6b7280');
-
-        -- Historique pour analytics de productivité
-        CREATE TABLE IF NOT EXISTS task_history (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            date DATE UNIQUE NOT NULL,
-            completed_count INTEGER DEFAULT 0,
-            created_count INTEGER DEFAULT 0,
-            pending_count INTEGER DEFAULT 0
-        );
-
-        -- Habitudes journalières
-        CREATE TABLE IF NOT EXISTS habits (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            emoji TEXT DEFAULT '✅',
-            frequency TEXT DEFAULT 'daily',
-            target_count INTEGER DEFAULT 1,
-            color TEXT DEFAULT '#10b981',
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-
-        -- Suivi des habitudes
-        CREATE TABLE IF NOT EXISTS habit_tracking (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            habit_id INTEGER REFERENCES habits(id) ON DELETE CASCADE,
-            date DATE NOT NULL,
-            completed INTEGER DEFAULT 0,
-            UNIQUE(habit_id, date)
-        );
-    ''')
-    
-    # Add recurrence columns if not exist (safe migration)
-    try:
-        conn.execute('ALTER TABLE todos ADD COLUMN recurrence_pattern TEXT')
-    except:
-        pass
-    try:
-        conn.execute('ALTER TABLE todos ADD COLUMN recurrence_end_date DATE')
-    except:
-        pass
-    try:
-        conn.execute('ALTER TABLE todos ADD COLUMN parent_todo_id INTEGER')
-    except:
-        pass
-    try:
-        conn.execute('ALTER TABLE todos ADD COLUMN archived INTEGER DEFAULT 0')
-    except:
-        pass
-    conn.commit()
-    conn.close()
-
-
-def send_telegram_message(message):
-    """Send a message via Telegram bot."""
-    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-        print("Telegram not configured")
-        return False
-
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    payload = {
-        "chat_id": TELEGRAM_CHAT_ID,
-        "text": message,
-        "parse_mode": "HTML"
-    }
-
-    try:
-        response = requests.post(url, json=payload, timeout=10)
-        return response.status_code == 200
-    except Exception as e:
-        print(f"Telegram error: {e}")
-        return False
-
-
-def check_deadlines():
-    """Check for upcoming deadlines and send reminders."""
-    conn = get_db()
-    cursor = conn.cursor()
-
-    # Find todos with deadlines in the next hour that haven't been reminded
-    now = datetime.now()
-    soon = now + timedelta(hours=1)
-
-    cursor.execute('''
-        SELECT id, title, category, priority, deadline
-        FROM todos
-        WHERE status = 'pending'
-        AND deadline IS NOT NULL
-        AND deadline <= ?
-        AND deadline >= ?
-        AND reminder_sent = 0
-    ''', (soon.isoformat(), now.isoformat()))
-
-    todos = cursor.fetchall()
-
-    for todo in todos:
-        priority_emoji = {'urgent': '🔴', 'important': '🟠', 'normal': '🟡'}.get(todo['priority'], '⚪')
-        message = f"""⏰ <b>Rappel - Deadline proche!</b>
-
-{priority_emoji} <b>{todo['title']}</b>
-📁 Catégorie: {todo['category']}
-⏳ Deadline: {todo['deadline']}
-
-<i>Il est temps de finaliser cette tâche!</i>"""
-
-        if send_telegram_message(message):
-            cursor.execute('UPDATE todos SET reminder_sent = 1 WHERE id = ?', (todo['id'],))
-
-    conn.commit()
-    conn.close()
-
-
-def send_daily_recap():
-    """Send daily recap via Telegram at 7 PM."""
-    try:
-        # Get stats
-        conn = get_db()
-        cursor = conn.cursor()
-        
-        cursor.execute('SELECT COUNT(*) as total FROM todos WHERE status = "pending"')
-        pending = cursor.fetchone()['total']
-        
-        today = datetime.now().date().isoformat()
-        cursor.execute('SELECT COUNT(*) as count FROM todos WHERE status = "completed" AND date(completed_at) = ?', (today,))
-        completed_today = cursor.fetchone()['count']
-        
-        # Get top priorities
-        cursor.execute('''
-            SELECT title, priority FROM todos
-            WHERE status = "pending"
-            ORDER BY CASE priority WHEN "urgent" THEN 1 WHEN "important" THEN 2 ELSE 3 END
-            LIMIT 5
-        ''')
-        priorities = cursor.fetchall()
-        
-        # Get daily content
-        cursor.execute('SELECT quote, quote_author FROM daily_content WHERE date = ?', (today,))
-        daily = cursor.fetchone()
-        
-        conn.close()
-        
-        # Build message
-        message = f"""📊 <b>Récap du {datetime.now().strftime('%d/%m/%Y')}</b>
-
-✅ Tâches complétées aujourd'hui: <b>{completed_today}</b>
-📋 Tâches en attente: <b>{pending}</b>
-
-"""
-        
-        if priorities:
-            message += "<b>Prochaines priorités:</b>\n"
-            for p in priorities:
-                emoji = {'urgent': '🔴', 'important': '🟠', 'normal': '🟡'}.get(p['priority'], '⚪')
-                message += f"{emoji} {p['title']}\n"
-            message += "\n"
-        
-        if daily:
-            message += f"💭 <i>\"{daily['quote']}\"</i>\n— {daily['quote_author']}\n\n"
-        
-        message += "<i>Bonne soirée Alexandre! 💪</i>"
-        
-        send_telegram_message(message)
-        print(f"Daily recap sent at {datetime.now()}")
-    except Exception as e:
-        print(f"Error sending daily recap: {e}")
-
-
-def generate_daily_content():
-    """Generate daily quote and fun fact using Claude."""
-    if not claude:
-        print("Claude API not configured")
-        return
-    
-    today = datetime.now().date().isoformat()
-    
-    # Check if content already exists for today
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('SELECT id FROM daily_content WHERE date = ?', (today,))
-    if cursor.fetchone():
-        conn.close()
-        print("Daily content already generated for today")
-        return
-    
-    try:
-        # Generate quote and fun fact
-        prompt = """Génère en JSON:
-{
-  "quote": "citation inspirante sur la tech, IA, productivité ou entrepreneuriat (max 120 chars)",
-  "author": "auteur de la citation",
-  "fun_fact": "fait intéressant sur tech, science ou histoire (max 150 chars)"
-}
-
-Sois concis, impactant, en français."""
-        
-        response = claude.messages.create(
-            model=CLAUDE_MODEL,
-            max_tokens=300,
-            system="Tu génères du contenu quotidien inspirant et éducatif. Réponds uniquement en JSON valide.",
-            messages=[{"role": "user", "content": prompt}]
-        )
-        
-        text = response.content[0].text.strip()
-        # Clean markdown if present
-        if text.startswith('```'):
-            text = text.replace('```json', '').replace('```', '').strip()
-        
-        data = json.loads(text)
-        
-        # Insert into database
-        cursor.execute('''
-            INSERT INTO daily_content (date, quote, quote_author, fun_fact)
-            VALUES (?, ?, ?, ?)
-        ''', (today, data['quote'], data['author'], data['fun_fact']))
-        conn.commit()
-        conn.close()
-        
-        print(f"Daily content generated for {today}")
-    except Exception as e:
-        conn.close()
-        print(f"Error generating daily content: {e}")
+ 
 
 
 # Initialize database FIRST
 init_db()
 
 # Initialize scheduler
-scheduler = BackgroundScheduler(timezone='Europe/Paris')
+scheduler = BackgroundScheduler(timezone=TIMEZONE)
 scheduler.add_job(check_deadlines, 'interval', minutes=15)
 scheduler.add_job(send_daily_recap, 'cron', hour=19, minute=0)  # 7 PM daily
 scheduler.add_job(generate_daily_content, 'cron', hour=6, minute=0)  # 6 AM daily
@@ -523,6 +227,24 @@ def index():
     return response
 
 
+@app.route('/projects')
+def projects():
+    """Serve the projects view."""
+    return send_from_directory(app.static_folder, 'projects.html')
+
+
+@app.route('/archives')
+def archives():
+    """Serve the archives view."""
+    return send_from_directory(app.static_folder, 'archives.html')
+
+
+@app.route('/dca')
+def dca():
+    """Serve the DCA tool view."""
+    return send_from_directory(app.static_folder, 'dca.html')
+
+
 @app.route('/api/todos', methods=['GET'])
 def get_todos():
     """Get all todos with optional filters."""
@@ -541,8 +263,8 @@ def get_todos():
     elif archived == '0':
         query += ' AND archived = 0'
     else:
-        # Default behavior: hide archived unless specifically requested
-        query += ' AND archived = 0'
+        # Default behavior: hide archived AND completed unless specifically requested
+        query += ' AND archived = 0 AND status != "completed"'
 
     if status and status != 'all':
         query += ' AND status = ?'
@@ -557,6 +279,22 @@ def get_todos():
     todos = [dict(row) for row in cursor.fetchall()]
     conn.close()
 
+    return jsonify(todos)
+
+
+@app.route('/api/todos/archived', methods=['GET'])
+def get_archived_todos():
+    """Get archived todos."""
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute('''
+        SELECT * FROM todos
+        WHERE archived = 1
+        ORDER BY completed_at DESC, updated_at DESC
+    ''')
+    todos = [dict(row) for row in cursor.fetchall()]
+    conn.close()
     return jsonify(todos)
 
 
@@ -613,14 +351,21 @@ def update_todo(todo_id):
     updates = []
     params = []
 
+    status_completed = data.get('status') == 'completed'
+
     for field in ['title', 'description', 'category', 'priority', 'status', 'deadline', 'archived']:
         if field in data:
+            if field == 'archived' and status_completed:
+                continue
             updates.append(f'{field} = ?')
             params.append(data[field])
 
-    if 'status' in data and data['status'] == 'completed':
+    if status_completed:
         updates.append('completed_at = ?')
         params.append(datetime.now().isoformat())
+        # Automatically archive completed tasks
+        updates.append('archived = ?')
+        params.append(1)
 
     updates.append('updated_at = ?')
     params.append(datetime.now().isoformat())
@@ -829,6 +574,96 @@ def update_roadmap_item(item_id):
     conn.close()
     
     return jsonify(item)
+
+
+# ============== PROJECTS ENDPOINTS ==============
+
+@app.route('/api/projects', methods=['GET'])
+def get_projects():
+    """Get all projects."""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM projects ORDER BY created_at DESC')
+    projects = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return jsonify(projects)
+
+
+@app.route('/api/projects', methods=['POST'])
+def create_project():
+    """Create a new project."""
+    data = request.json
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO projects (name, description, github_url, comment, status)
+        VALUES (?, ?, ?, ?, ?)
+    ''', (
+        data.get('name'),
+        data.get('description'),
+        data.get('github_url'),
+        data.get('comment'),
+        data.get('status', 'active')
+    ))
+    project_id = cursor.lastrowid
+    conn.commit()
+    cursor.execute('SELECT * FROM projects WHERE id = ?', (project_id,))
+    project = dict(cursor.fetchone())
+    conn.close()
+    return jsonify(project), 201
+
+
+@app.route('/api/projects/<int:project_id>', methods=['PUT'])
+def update_project(project_id):
+    """Update a project."""
+    data = request.json
+    conn = get_db()
+    cursor = conn.cursor()
+    updates = []
+    params = []
+    for field in ['name', 'description', 'github_url', 'comment', 'status']:
+        if field in data:
+            updates.append(f'{field} = ?')
+            params.append(data[field])
+    
+    if not updates:
+        conn.close()
+        return jsonify({'error': 'No fields to update'}), 400
+        
+    updates.append('updated_at = ?')
+    params.append(datetime.now().isoformat())
+    params.append(project_id)
+    
+    cursor.execute(f'UPDATE projects SET {", ".join(updates)} WHERE id = ?', params)
+    conn.commit()
+    cursor.execute('SELECT * FROM projects WHERE id = ?', (project_id,))
+    project = dict(cursor.fetchone())
+    conn.close()
+    return jsonify(project)
+
+
+@app.route('/api/projects/<int:project_id>', methods=['DELETE'])
+def delete_project(project_id):
+    """Delete a project."""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM projects WHERE id = ?', (project_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True})
+
+
+# ============== DCA PROXY ==============
+
+@app.route('/api/dca/analyze', methods=['POST'])
+def dca_analyze():
+    """Proxy request to DCA backend."""
+    data = request.json
+    try:
+        resp = requests.post(DCA_BACKEND_URL, json=data, timeout=30)
+        return (resp.text, resp.status_code, resp.headers.items())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/roadmap/<int:item_id>', methods=['DELETE'])
@@ -1162,7 +997,7 @@ def get_calendar():
     cursor.execute('''
         SELECT id, title, priority, deadline, status
         FROM todos
-        WHERE deadline >= ? AND deadline < ?
+        WHERE deadline >= ? AND deadline < ? AND archived = 0
         ORDER BY deadline
     ''', (first_day, last_day))
     
@@ -1187,5 +1022,4 @@ def get_calendar():
 
 
 if __name__ == '__main__':
-    port = int(os.getenv('PORT', 5001))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=PORT, debug=True)

@@ -40,6 +40,9 @@ command_cache = {}
 # Structure: {chat_id: {'task': {...}, 'state': str, 'timestamp': datetime, 'message_id': int}}
 pending_tasks = {}
 
+# État conversationnel pour création d'événement calendrier
+pending_events = {}
+
 # =============================================================================
 # OPTIMISATION TOKENS : Prompts système courts et précis
 # =============================================================================
@@ -332,6 +335,14 @@ def detect_intent(message: str) -> str:
     if any(p in message_lower for p in email_patterns):
         return 'check_emails'
 
+    # Patterns pour créer un événement calendrier
+    event_patterns = [
+        'calendrier', 'agenda', 'event', 'événement', 'evenement',
+        'meeting', 'rdv', 'rendez-vous', 'rendez vous', 'planifie', 'programme'
+    ]
+    if any(p in message_lower for p in event_patterns):
+        return 'create_event'
+
     # Patterns pour ajouter une tâche
     add_patterns = ['ajoute', 'add', 'nouvelle', 'créer', 'crée', 'faire', 'todo', 'tâche']
     if any(p in message_lower for p in add_patterns):
@@ -374,6 +385,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "`Qu'est-ce que je dois faire ?` ou `/briefing`\n\n"
         "📬 **Emails:**\n"
         "`Mes emails` ou `/emails`\n\n"
+        "🗓️ **Calendrier:**\n"
+        "`Planifie un meeting demain 10h` ou `/event Démo client jeudi 14h`\n\n"
         "📝 **Ajouter une tâche:**\n"
         "`ajoute finir le script urgent easynode`\n\n"
         "✅ **Terminer une tâche:**\n"
@@ -493,6 +506,9 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
 🌅 **Briefing & Emails**
 • `/briefing` - Briefing quotidien complet
 • `/emails` - Résumé des emails non lus
+
+🗓️ **Calendrier**
+• `/event <détails>` - Créer un événement (langage naturel)
 
 📝 **Gestion des tâches**
 • `/add <tâche>` - Ajoute une nouvelle tâche (mode intelligent)
@@ -620,6 +636,19 @@ async def cmd_emails(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"❌ Erreur: {str(e)}")
 
 
+async def cmd_event(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handler /event <détails> - Crée un événement calendrier"""
+    if not context.args:
+        await update.message.reply_text(
+            "Usage: `/event <détails>`\nEx: `/event Démo client jeudi 14h`",
+            parse_mode='Markdown',
+        )
+        return
+
+    message = ' '.join(context.args)
+    await process_create_event(update, message)
+
+
 async def process_simple_briefing(update: Update):
     """Briefing simple sans Gmail (fallback)."""
     todos = get_todos(status='pending')
@@ -668,6 +697,14 @@ def clean_expired_pending_tasks():
     for chat_id in expired:
         del pending_tasks[chat_id]
         logger.info(f"Expired pending task for chat {chat_id}")
+
+    expired_events = [
+        chat_id for chat_id, event in pending_events.items()
+        if (now - event['timestamp']).total_seconds() > 300
+    ]
+    for chat_id in expired_events:
+        del pending_events[chat_id]
+        logger.info(f"Expired pending event for chat {chat_id}")
 
 
 async def process_smart_add_task(update: Update, message: str):
@@ -868,6 +905,137 @@ async def handle_pending_task_response(update: Update, message: str) -> bool:
     return True
 
 
+async def process_create_event(update: Update, message: str):
+    """Crée un événement calendrier à partir d'un message naturel."""
+    chat_id = update.effective_chat.id
+    clean_expired_pending_tasks()
+
+    await update.message.reply_text("🗓️ Analyse de l'événement...", parse_mode='Markdown')
+
+    try:
+        from src.agents.assistant_agent import parse_calendar_request, create_calendar_event
+    except Exception as e:
+        await update.message.reply_text(f"❌ Calendrier indisponible: {e}")
+        return
+
+    parsed = parse_calendar_request(message)
+    if parsed.get('error'):
+        await update.message.reply_text(f"❌ Erreur: {parsed['error']}")
+        return
+
+    if parsed.get('needs_clarification'):
+        pending_events[chat_id] = {
+            'original_message': message,
+            'parsed_event': parsed,
+            'state': 'awaiting_response',
+            'timestamp': datetime.now(),
+            'message_id': update.message.message_id,
+        }
+
+        questions = parsed.get('questions') or []
+        questions_text = "\n".join([f"   {i + 1}. {q}" for i, q in enumerate(questions[:2])])
+        msg = (
+            "🗓️ **Besoin de précisions**\n\n"
+            f"{questions_text}\n\n"
+            "💬 Réponds avec les détails pour finaliser l'événement."
+        )
+        await update.message.reply_text(msg, parse_mode='Markdown')
+        return
+
+    if not parsed.get('start_time'):
+        await update.message.reply_text("❌ Impossible de déterminer la date/heure. Reformule avec une date précise.")
+        return
+
+    event = create_calendar_event(
+        summary=parsed.get('summary', 'Nouvel événement'),
+        start_time=parsed.get('start_time'),
+        end_time=parsed.get('end_time'),
+        recurrence=parsed.get('recurrence'),
+    )
+
+    if event.get('error'):
+        await update.message.reply_text(f"❌ Erreur calendrier: {event['error']}")
+        return
+
+    link = event.get('htmlLink')
+    recap = (
+        "✅ **Événement créé**\n\n"
+        f"🗓️ {event.get('summary', parsed.get('summary', 'Événement'))}\n"
+        f"📅 {parsed.get('start_time')}\n"
+    )
+    if parsed.get('recurrence'):
+        recap += f"🔁 {parsed.get('recurrence')}\n"
+    if link:
+        recap += f"\n🔗 {link}"
+
+    await update.message.reply_text(recap, parse_mode='Markdown')
+
+
+async def handle_pending_event_response(update: Update, message: str) -> bool:
+    """Gère les réponses pour création d'événements en attente."""
+    chat_id = update.effective_chat.id
+    clean_expired_pending_tasks()
+
+    if chat_id not in pending_events:
+        return False
+
+    pending = pending_events[chat_id]
+
+    if message.lower().strip() in ['annule', 'annuler', 'cancel', 'non', 'stop']:
+        del pending_events[chat_id]
+        await update.message.reply_text("❌ Création d'événement annulée.", parse_mode='Markdown')
+        return True
+
+    await update.message.reply_text("🗓️ Finalisation de l'événement...", parse_mode='Markdown')
+
+    try:
+        from src.agents.assistant_agent import finalize_calendar_request, create_calendar_event
+    except Exception as e:
+        del pending_events[chat_id]
+        await update.message.reply_text(f"❌ Calendrier indisponible: {e}")
+        return True
+
+    final_parsed = finalize_calendar_request(pending['parsed_event'], message)
+    del pending_events[chat_id]
+
+    if final_parsed.get('error'):
+        await update.message.reply_text(f"❌ Erreur: {final_parsed['error']}")
+        return True
+
+    if final_parsed.get('needs_clarification'):
+        await update.message.reply_text("❌ Toujours ambigu. Essaie de reformuler avec date + heure.")
+        return True
+
+    if not final_parsed.get('start_time'):
+        await update.message.reply_text("❌ Impossible de déterminer la date/heure. Reformule avec une date précise.")
+        return True
+
+    event = create_calendar_event(
+        summary=final_parsed.get('summary', 'Nouvel événement'),
+        start_time=final_parsed.get('start_time'),
+        end_time=final_parsed.get('end_time'),
+        recurrence=final_parsed.get('recurrence'),
+    )
+
+    if event.get('error'):
+        await update.message.reply_text(f"❌ Erreur calendrier: {event['error']}")
+        return True
+
+    link = event.get('htmlLink')
+    recap = (
+        "✅ **Événement créé**\n\n"
+        f"🗓️ {event.get('summary', final_parsed.get('summary', 'Événement'))}\n"
+        f"📅 {final_parsed.get('start_time')}\n"
+    )
+    if final_parsed.get('recurrence'):
+        recap += f"🔁 {final_parsed.get('recurrence')}\n"
+    if link:
+        recap += f"\n🔗 {link}"
+
+    await update.message.reply_text(recap, parse_mode='Markdown')
+    return True
+
+
 async def process_add_task(update: Update, message: str):
     """Alias pour le nouveau mode intelligent."""
     await process_smart_add_task(update, message)
@@ -927,6 +1095,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     # PRIORITÉ: Vérifier s'il y a une tâche en attente de réponse
+    if await handle_pending_event_response(update, message):
+        return
+
     if await handle_pending_task_response(update, message):
         return  # Message traité comme réponse à une tâche en attente
 
@@ -941,6 +1112,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif intent == 'add_task':
         await process_add_task(update, message)
+
+    elif intent == 'create_event':
+        await process_create_event(update, message)
 
     elif intent == 'complete_task':
         # Extraire l'identifiant
@@ -987,6 +1161,7 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("briefing", cmd_briefing))
     app.add_handler(CommandHandler("emails", cmd_emails))
+    app.add_handler(CommandHandler("event", cmd_event))
     app.add_handler(CommandHandler("list", cmd_list))
     app.add_handler(CommandHandler("stats", cmd_stats))
     app.add_handler(CommandHandler("roadmap", cmd_roadmap))
