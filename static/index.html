@@ -8,565 +8,154 @@
     <link href="https://fonts.googleapis.com" rel="preconnect" />
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
     <link
-        href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&amp;family=Inter:wght@300;400;500;600&amp;display=swap"
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap"
         rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
-    <script>
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        primary: "#D65C7C",
-                        "primary-hover": "#E87C99",
-                        "accent-gold": "#C8AA6E",
-                        "indigo-deep": "#0F172A",
-                        "indigo-card": "#1E293B",
-                        "indigo-lighter": "#334155",
-                        "background-light": "#F3F4F6",
-                        "background-dark": "#0B1120",
-                        "text-light": "#E2E8F0",
-                        "text-muted": "#94A3B8"
-                    },
-                    fontFamily: {
-                        sans: ['"Inter"', 'sans-serif'],
-                        display: ['"Noto Sans JP"', 'sans-serif']
-                    },
-                    backgroundImage: {
-                        'washi-pattern': "url('data:image/svg+xml,%3Csvg width=\\'64\\' height=\\'64\\' viewBox=\\'0 0 64 64\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cpath d=\\'M8 16c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8zm0-2c3.314 0 6-2.686 6-6s-2.686-6-6-6-6 2.686-6 6 2.686 6 6 6zm33.414-6l5.95-5.95L45.95.636 40 6.586 34.05.636 32.636 2.05 38.586 8l-5.95 5.95 1.414 1.414L40 9.414l5.95 5.95 1.414-1.414L41.414 8zM40 48c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8zm0-2c3.314 0 6-2.686 6-6s-2.686-6-6-6-6 2.686-6 6 2.686 6 6 6zM9.414 40l5.95-5.95-1.414-1.414L8 38.586l-5.95-5.95L.636 34.05 6.586 40l-5.95 5.95 1.414 1.414L8 41.414l5.95 5.95 1.414-1.414L9.414 40z\\' fill=\\'%239C92AC\\' fill-opacity=\\'0.03\\' fill-rule=\\'evenodd\\'/%3E%3C/svg%3E')"
-                    }
-                }
-            }
-        };
-    </script>
-    <style>
-        :root {
-            --bg-primary: #0B1120;
-            --bg-secondary: #1E293B;
-            --bg-card: #334155;
-            --text-primary: #E2E8F0;
-            --text-secondary: #94A3B8;
-            --accent-primary: #D65C7C;
-            --accent-green: #10B981;
-            --accent-orange: #F59E0B;
-            --accent-red: #EF4444;
-            --border-color: #334155;
-        }
-
-        .glass-panel {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .japanese-border-bottom {
-            position: relative;
-        }
-
-        .japanese-border-bottom::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(214, 92, 124, 0.5), transparent);
-        }
-
-        .category-item.active {
-            background: rgba(51, 65, 85, 0.5);
-            border-left-color: var(--accent-primary);
-            color: var(--accent-primary);
-        }
-
-        .filter-tab.active {
-            background: rgba(255, 255, 255, 0.95);
-            color: #0f172a;
-            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.15);
-        }
-
-        .dark .filter-tab.active {
-            background: rgba(51, 65, 85, 0.7);
-            color: #ffffff;
-            box-shadow: 0 8px 18px rgba(10, 15, 25, 0.35);
-        }
-
-        .nav-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.55rem 1rem;
-            border-radius: 999px;
-            font-size: 0.7rem;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
-            font-weight: 600;
-            color: var(--text-secondary);
-            background: rgba(148, 163, 184, 0.12);
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            transition: all 0.2s ease;
-        }
-
-        .nav-link:hover {
-            color: var(--text-primary);
-            border-color: rgba(214, 92, 124, 0.35);
-            transform: translateY(-1px);
-        }
-
-        .nav-link.active {
-            color: #0f172a;
-            background: rgba(255, 255, 255, 0.9);
-            border-color: rgba(214, 92, 124, 0.4);
-            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
-        }
-
-        .dark .nav-link.active {
-            color: #ffffff;
-            background: rgba(51, 65, 85, 0.8);
-        }
-
-        .todo-item {
-            background: rgba(30, 41, 59, 0.6);
-            border: 1px solid rgba(148, 163, 184, 0.12);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 0.95rem 1.1rem;
-            transition: all 0.2s ease;
-        }
-
-        .todo-item:hover {
-            border-color: rgba(214, 92, 124, 0.45);
-            transform: translateY(-2px);
-        }
-
-        .todo-item.completed {
-            opacity: 0.6;
-        }
-
-        .todo-item.completed .todo-title {
-            text-decoration: line-through;
-        }
-
-        .todo-item.archived {
-            opacity: 0.7;
-        }
-
-        .todo-item.archived .todo-title {
-            text-decoration: none;
-        }
-
-        .todo-checkbox {
-            width: 22px;
-            height: 22px;
-            border-radius: 6px;
-            border: 2px solid rgba(148, 163, 184, 0.5);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            transition: all 0.2s ease;
-        }
-
-        .todo-checkbox:hover {
-            border-color: var(--accent-green);
-        }
-
-        .todo-checkbox.checked {
-            background: var(--accent-green);
-            border-color: var(--accent-green);
-        }
-
-        .todo-checkbox.checked::after {
-            content: '✓';
-            color: white;
-            font-size: 0.75rem;
-            font-weight: bold;
-        }
-
-        .todo-content {
-            flex: 1;
-        }
-
-        .todo-title {
-            font-weight: 500;
-            margin-bottom: 0.25rem;
-            color: var(--text-primary);
-        }
-
-        .todo-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem;
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-        }
-
-        .todo-meta span {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
-        }
-
-        .priority-badge {
-            padding: 0.2rem 0.6rem;
-            border-radius: 999px;
-            font-size: 0.65rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            border: 1px solid transparent;
-        }
-
-        .priority-urgent {
-            background: rgba(239, 68, 68, 0.15);
-            color: #f87171;
-            border-color: rgba(239, 68, 68, 0.35);
-        }
-
-        .priority-important {
-            background: rgba(245, 158, 11, 0.15);
-            color: #fbbf24;
-            border-color: rgba(245, 158, 11, 0.35);
-        }
-
-        .priority-normal {
-            background: rgba(148, 163, 184, 0.2);
-            color: var(--text-secondary);
-            border-color: rgba(148, 163, 184, 0.35);
-        }
-
-        .todo-actions {
-            display: flex;
-            gap: 0.4rem;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
-
-        .todo-item:hover .todo-actions {
-            opacity: 1;
-        }
-
-        .action-btn {
-            width: 30px;
-            height: 30px;
-            border-radius: 8px;
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            background: rgba(15, 23, 42, 0.35);
-            color: var(--text-secondary);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-        }
-
-        .action-btn:hover {
-            background: rgba(214, 92, 124, 0.2);
-            color: #f8fafc;
-            border-color: rgba(214, 92, 124, 0.4);
-        }
-
-        .action-btn.delete:hover {
-            background: rgba(239, 68, 68, 0.25);
-            border-color: rgba(239, 68, 68, 0.5);
-        }
-
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(11, 17, 32, 0.75);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-            padding: 1.5rem;
-        }
-
-        .modal-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .modal {
-            background: rgba(30, 41, 59, 0.95);
-            padding: 2rem;
-            border-radius: 18px;
-            width: 100%;
-            max-width: 520px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 24px 60px rgba(5, 10, 20, 0.45);
-            transform: translateY(20px);
-            transition: transform 0.3s ease;
-        }
-
-        .modal-overlay.active .modal {
-            transform: translateY(0);
-        }
-
-        .modal h2 {
-            margin-bottom: 1.5rem;
-            font-size: 1.25rem;
-        }
-
-        .form-group {
-            margin-bottom: 1.25rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 0.75rem;
-            border-radius: 10px;
-            border: 1px solid rgba(148, 163, 184, 0.25);
-            background: rgba(15, 23, 42, 0.6);
-            color: var(--text-primary);
-            font-size: 0.95rem;
-            font-family: inherit;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: var(--accent-primary);
-            box-shadow: 0 0 0 2px rgba(214, 92, 124, 0.2);
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-
-        .modal-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 0.75rem;
-            margin-top: 1.5rem;
-        }
-
-        @media (max-width: 640px) {
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: #0f172a;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #334155;
-            border-radius: 3px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #475569;
-        }
-
-        .todo-description {
-            margin-top: 0.5rem;
-            padding: 0.75rem;
-            background: rgba(100, 116, 139, 0.1);
-            border-left: 3px solid var(--accent-primary);
-            border-radius: 6px;
-            font-size: 0.8rem;
-            line-height: 1.6;
-            color: var(--text-secondary);
-            white-space: pre-line;
-        }
-
-        .todo-description strong {
-            color: var(--text-primary);
-        }
-    </style>
+    <link href="/theme.css" rel="stylesheet" />
 </head>
 
 <body
-    class="bg-gray-100 dark:bg-background-dark text-gray-800 dark:text-text-light font-sans min-h-screen transition-colors duration-300 relative overflow-x-hidden">
-    <div class="fixed top-0 left-0 w-full h-full pointer-events-none z-0 opacity-20 dark:opacity-10 bg-washi-pattern">
-    </div>
-    <div
-        class="fixed -top-32 -right-32 w-96 h-96 bg-primary rounded-full filter blur-[120px] opacity-10 dark:opacity-20 z-0">
-    </div>
-    <div
-        class="fixed top-1/2 -left-32 w-80 h-80 bg-blue-500 rounded-full filter blur-[100px] opacity-10 dark:opacity-10 z-0">
-    </div>
+    class="bg-base text-ink font-sans min-h-screen transition-colors duration-300 relative overflow-x-hidden">
+    <div class="bg-washi fixed top-0 left-0 w-full h-full pointer-events-none z-0"></div>
+    <div class="orb orb-accent fixed -top-32 -right-32 w-96 h-96 rounded-full z-0"></div>
+    <div class="orb orb-warm fixed top-1/2 -left-32 w-80 h-80 rounded-full z-0"></div>
     <div class="relative z-10 max-w-7xl mx-auto p-4 md:p-8 space-y-8" id="top">
         <header
-            class="flex flex-col md:flex-row justify-between items-start md:items-center japanese-border-bottom pb-6 gap-4">
+            class="flex flex-col md:flex-row justify-between items-start md:items-center japanese-border-bottom pb-6 gap-4 reveal"
+            style="--delay: 0.05s;">
             <div>
                 <div class="flex items-center gap-3">
                     <span class="text-3xl">🌙</span>
                     <h1
-                        class="text-3xl md:text-4xl font-display font-light tracking-wide text-gray-900 dark:text-white">
-                        Alex <span class="text-primary font-normal">Todo</span> Dashboard
+                        class="text-3xl md:text-4xl font-display font-medium tracking-wide text-ink">
+                        Alex <span class="text-accent font-semibold">Todo</span> Dashboard
                     </h1>
                 </div>
-                <p class="text-sm text-gray-500 dark:text-text-muted mt-1 ml-1 font-display tracking-widest uppercase text-xs"
-                    id="currentDate"></p>
+                <p class="text-xs text-muted mt-1 ml-1 font-display tracking-widest uppercase" id="currentDate"></p>
             </div>
             <div class="flex items-center gap-3">
                 <button type="button"
-                    class="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-200 dark:bg-indigo-lighter/50 hover:bg-gray-300 dark:hover:bg-indigo-lighter transition-all text-sm font-medium border border-gray-300 dark:border-white/5 shadow-sm text-gray-700 dark:text-gray-200"
+                    class="btn btn-secondary btn-sm"
                     onclick="sendDailySummary()">
-                    <span class="material-icons-round text-base text-blue-400">bar_chart</span>
+                    <span class="material-icons-round text-base text-info">bar_chart</span>
                     Résumé Telegram
                 </button>
                 <button type="button"
-                    class="flex items-center gap-2 px-5 py-2 rounded-lg bg-primary hover:bg-primary-hover transition-all text-sm font-semibold text-white shadow-lg shadow-primary/20"
+                    class="btn btn-primary"
                     onclick="openModal()">
                     <span class="material-icons-round text-base">add</span>
                     Nouvelle tâche
                 </button>
             </div>
         </header>
-        <nav class="flex flex-wrap gap-3 items-center" aria-label="Navigation principale">
+        <nav class="flex flex-wrap gap-3 items-center reveal" style="--delay: 0.1s;"
+            aria-label="Navigation principale">
             <a class="nav-link active" href="/">Dashboard</a>
             <a class="nav-link" href="/projects">Projets</a>
             <a class="nav-link" href="/dca">DCA</a>
             <a class="nav-link" href="/archives">Archives</a>
         </nav>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4" id="section-stats">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 reveal" style="--delay: 0.15s;"
+            id="section-stats">
             <div
-                class="glass-panel p-5 rounded-xl flex flex-col justify-between hover:translate-y-[-2px] transition-transform duration-300 group cursor-default bg-white dark:bg-indigo-card shadow-sm dark:shadow-none">
-                <h3 class="text-xs font-bold tracking-widest text-gray-500 dark:text-gray-400 uppercase mb-2">Total
-                    Tâches</h3>
+                class="glass-panel p-5 rounded-xl flex flex-col justify-between hover:translate-y-[-2px] transition-transform duration-300 group cursor-default">
+                <h3 class="text-xs font-bold tracking-widest text-muted uppercase mb-2">Total Tâches</h3>
                 <div class="flex items-end justify-between">
-                    <span class="text-4xl font-display font-light text-gray-900 dark:text-white" id="statTotal">0</span>
-                    <span
-                        class="material-icons-round text-primary/20 text-4xl group-hover:text-primary/40 transition-colors">list_alt</span>
+                    <span class="text-4xl font-display font-light text-ink" id="statTotal">0</span>
+                    <span class="material-icons-round text-accent text-4xl opacity-30 group-hover:opacity-60 transition-opacity">list_alt</span>
                 </div>
             </div>
             <div
-                class="glass-panel p-5 rounded-xl flex flex-col justify-between hover:translate-y-[-2px] transition-transform duration-300 group cursor-default bg-white dark:bg-indigo-card shadow-sm dark:shadow-none">
-                <h3 class="text-xs font-bold tracking-widest text-gray-500 dark:text-gray-400 uppercase mb-2">En Attente
-                </h3>
+                class="glass-panel p-5 rounded-xl flex flex-col justify-between hover:translate-y-[-2px] transition-transform duration-300 group cursor-default">
+                <h3 class="text-xs font-bold tracking-widest text-muted uppercase mb-2">En Attente</h3>
                 <div class="flex items-end justify-between">
-                    <span class="text-4xl font-display font-light text-amber-500" id="statPending">0</span>
-                    <span
-                        class="material-icons-round text-amber-500/20 text-4xl group-hover:text-amber-500/40 transition-colors">hourglass_empty</span>
+                    <span class="text-4xl font-display font-light text-warning" id="statPending">0</span>
+                    <span class="material-icons-round text-warning text-4xl opacity-30 group-hover:opacity-60 transition-opacity">hourglass_empty</span>
                 </div>
             </div>
             <div
-                class="glass-panel p-5 rounded-xl flex flex-col justify-between hover:translate-y-[-2px] transition-transform duration-300 group cursor-default bg-white dark:bg-indigo-card shadow-sm dark:shadow-none">
-                <h3 class="text-xs font-bold tracking-widest text-gray-500 dark:text-gray-400 uppercase mb-2">Complétées
-                </h3>
+                class="glass-panel p-5 rounded-xl flex flex-col justify-between hover:translate-y-[-2px] transition-transform duration-300 group cursor-default">
+                <h3 class="text-xs font-bold tracking-widest text-muted uppercase mb-2">Complétées</h3>
                 <div class="flex items-end justify-between">
-                    <span class="text-4xl font-display font-light text-emerald-500" id="statCompleted">0</span>
-                    <span
-                        class="material-icons-round text-emerald-500/20 text-4xl group-hover:text-emerald-500/40 transition-colors">check_circle</span>
+                    <span class="text-4xl font-display font-light text-success" id="statCompleted">0</span>
+                    <span class="material-icons-round text-success text-4xl opacity-30 group-hover:opacity-60 transition-opacity">check_circle</span>
                 </div>
             </div>
             <div
-                class="glass-panel p-5 rounded-xl flex flex-col justify-between hover:translate-y-[-2px] transition-transform duration-300 group cursor-default bg-white dark:bg-indigo-card shadow-sm dark:shadow-none">
-                <h3 class="text-xs font-bold tracking-widest text-gray-500 dark:text-gray-400 uppercase mb-2">En Retard
-                </h3>
+                class="glass-panel p-5 rounded-xl flex flex-col justify-between hover:translate-y-[-2px] transition-transform duration-300 group cursor-default">
+                <h3 class="text-xs font-bold tracking-widest text-muted uppercase mb-2">En Retard</h3>
                 <div class="flex items-end justify-between">
-                    <span class="text-4xl font-display font-light text-red-500" id="statOverdue">0</span>
-                    <span
-                        class="material-icons-round text-red-500/20 text-4xl group-hover:text-red-500/40 transition-colors">warning</span>
+                    <span class="text-4xl font-display font-light text-danger" id="statOverdue">0</span>
+                    <span class="material-icons-round text-danger text-4xl opacity-30 group-hover:opacity-60 transition-opacity">warning</span>
                 </div>
             </div>
             <div
-                class="glass-panel p-5 rounded-xl flex flex-col justify-between hover:translate-y-[-2px] transition-transform duration-300 group cursor-default bg-white dark:bg-indigo-card shadow-sm dark:shadow-none">
-                <h3 class="text-xs font-bold tracking-widest text-gray-500 dark:text-gray-400 uppercase mb-2">
+                class="glass-panel p-5 rounded-xl flex flex-col justify-between hover:translate-y-[-2px] transition-transform duration-300 group cursor-default">
+                <h3 class="text-xs font-bold tracking-widest text-muted uppercase mb-2">
                     Aujourd'hui</h3>
                 <div class="flex items-end justify-between">
-                    <span class="text-4xl font-display font-light text-gray-900 dark:text-white" id="statToday">0</span>
-                    <span
-                        class="material-icons-round text-blue-400/20 text-4xl group-hover:text-blue-400/40 transition-colors">today</span>
+                    <span class="text-4xl font-display font-light text-ink" id="statToday">0</span>
+                    <span class="material-icons-round text-info text-4xl opacity-30 group-hover:opacity-60 transition-opacity">today</span>
                 </div>
             </div>
         </div>
-        <div class="glass-panel p-6 rounded-xl bg-white dark:bg-indigo-card shadow-sm dark:shadow-none border border-gray-200 dark:border-white/5"
-            id="section-progress">
+        <div class="glass-panel p-6 rounded-xl reveal" style="--delay: 0.2s;" id="section-progress">
             <div class="flex justify-between items-center mb-3">
-                <span class="text-sm font-medium text-gray-600 dark:text-gray-300">Progression globale</span>
-                <span class="text-sm font-bold text-primary" id="progressPercent">0%</span>
+                <span class="text-sm font-medium text-subtle">Progression globale</span>
+                <span class="text-sm font-bold text-accent" id="progressPercent">0%</span>
             </div>
-            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
-                <div class="bg-primary h-2.5 rounded-full w-0 shadow-[0_0_10px_rgba(214,92,124,0.5)]" id="progressFill"
-                    style="width: 0%"></div>
+            <div class="progress-track">
+                <div class="progress-fill w-0" id="progressFill" style="width: 0%"></div>
             </div>
         </div>
 
         <!-- Citation & Fait du jour -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="section-daily">
-            <div
-                class="glass-panel p-5 rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-200/30 dark:border-purple-500/20 hover:translate-y-[-2px] transition-transform duration-300">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 reveal" style="--delay: 0.25s;" id="section-daily">
+            <div class="glass-panel panel-quote p-5 rounded-xl hover:translate-y-[-2px] transition-transform duration-300">
                 <div class="flex items-start justify-between mb-3">
                     <div class="flex items-center gap-2">
                         <span class="text-2xl">💭</span>
-                        <h3 class="text-xs font-bold tracking-widest text-purple-600 dark:text-purple-400 uppercase">
-                            Citation du jour</h3>
+                        <h3 class="text-xs font-bold tracking-widest text-subtle uppercase">Citation du jour</h3>
                     </div>
-                    <button type="button" class="text-purple-400 hover:text-purple-300 transition-colors"
-                        onclick="refreshDailyContent()" title="Regénérer">
+                    <button type="button" class="action-btn" onclick="refreshDailyContent()" title="Regénérer">
                         <span class="material-icons-round text-lg">refresh</span>
                     </button>
                 </div>
-                <blockquote class="text-gray-700 dark:text-gray-200 italic text-sm leading-relaxed mb-2"
-                    id="dailyQuote">"Chargement..."</blockquote>
-                <p class="text-xs text-purple-500 dark:text-purple-400 font-medium" id="dailyQuoteAuthor">— ...</p>
+                <blockquote class="text-subtle italic text-sm leading-relaxed mb-2" id="dailyQuote">
+                    "Chargement..."
+                </blockquote>
+                <p class="text-xs text-muted font-medium" id="dailyQuoteAuthor">— ...</p>
             </div>
-            <div
-                class="glass-panel p-5 rounded-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 dark:from-blue-900/20 dark:to-cyan-900/20 border border-blue-200/30 dark:border-blue-500/20 hover:translate-y-[-2px] transition-transform duration-300">
+            <div class="glass-panel panel-fact p-5 rounded-xl hover:translate-y-[-2px] transition-transform duration-300">
                 <div class="flex items-center gap-2 mb-3">
                     <span class="text-2xl">💡</span>
-                    <h3 class="text-xs font-bold tracking-widest text-blue-600 dark:text-blue-400 uppercase">Le
-                        saviez-vous ?</h3>
+                    <h3 class="text-xs font-bold tracking-widest text-subtle uppercase">Le saviez-vous ?</h3>
                 </div>
-                <p class="text-gray-700 dark:text-gray-200 text-sm leading-relaxed" id="dailyFunFact">Chargement...</p>
+                <p class="text-subtle text-sm leading-relaxed" id="dailyFunFact">Chargement...</p>
             </div>
         </div>
 
         <!-- Roadmap Section -->
-        <div class="glass-panel rounded-xl bg-white dark:bg-indigo-card shadow-sm dark:shadow-none border border-gray-200 dark:border-white/5"
-            id="section-roadmap">
+        <div class="glass-panel rounded-xl reveal" style="--delay: 0.3s;" id="section-roadmap">
             <div
-                class="p-6 border-b border-gray-200 dark:border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                class="p-6 border-b border-subtle flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div class="flex items-center gap-3">
                     <span class="text-2xl">🗺️</span>
-                    <h2 class="text-xl font-display font-medium text-gray-800 dark:text-white">Roadmap</h2>
+                    <h2 class="text-xl font-display font-medium text-ink">Roadmap</h2>
                 </div>
                 <div class="flex items-center gap-3">
-                    <div class="flex p-1 bg-gray-100 dark:bg-indigo-lighter/30 rounded-lg">
+                    <div class="flex p-1 bg-surface-2 rounded-lg border border-subtle">
                         <button type="button"
                             class="roadmap-tab px-4 py-1.5 rounded-md text-xs font-medium transition-all active"
                             data-type="mid_term">Mi-terme (3-6 mois)</button>
                         <button type="button"
-                            class="roadmap-tab px-4 py-1.5 rounded-md text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-all"
+                            class="roadmap-tab px-4 py-1.5 rounded-md text-xs font-medium transition-all"
                             data-type="long_term">Long-terme (6+ mois)</button>
                     </div>
                     <button type="button"
-                        class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary hover:bg-primary-hover transition-all text-sm font-semibold text-white shadow-lg shadow-primary/20"
-                        onclick="openRoadmapModal()">
+                        class="btn btn-primary btn-sm" onclick="openRoadmapModal()">
                         <span class="material-icons-round text-base">add</span>
                         Objectif
                     </button>
@@ -575,31 +164,29 @@
             <div class="p-6 min-h-[200px]" id="roadmapContent">
                 <div class="flex flex-col items-center justify-center h-40 text-center">
                     <span class="text-4xl mb-3 animate-pulse">🎯</span>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Aucun objectif défini. Ajoutez votre premier
-                        objectif!</p>
+                    <p class="text-sm text-muted">Aucun objectif défini. Ajoutez votre premier objectif!</p>
                 </div>
             </div>
         </div>
 
         <!-- Analytics & Habits Row -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="section-analytics">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 reveal" style="--delay: 0.35s;" id="section-analytics">
             <!-- Graphique Productivité -->
             <div
-                class="glass-panel rounded-xl bg-white dark:bg-indigo-card shadow-sm dark:shadow-none border border-gray-200 dark:border-white/5 p-6">
+                class="glass-panel rounded-xl p-6">
                 <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center gap-2">
                         <span class="text-2xl">📊</span>
-                        <h3 class="text-sm font-bold tracking-widest text-gray-600 dark:text-gray-300 uppercase">
-                            Productivité</h3>
+                        <h3 class="text-sm font-bold tracking-widest text-subtle uppercase">Productivité</h3>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="text-xs text-emerald-500 font-semibold" id="streakBadge">🔥 0 jours</span>
+                        <span class="text-xs text-success font-semibold" id="streakBadge">🔥 0 jours</span>
                     </div>
                 </div>
                 <div class="relative h-48 w-full">
                     <canvas id="productivityChart"></canvas>
                 </div>
-                <div class="flex justify-between mt-4 text-xs text-gray-500 dark:text-gray-400">
+                <div class="flex justify-between mt-4 text-xs text-muted">
                     <span>Meilleur jour: <strong id="bestDayLabel">-</strong></span>
                     <span>Cette semaine: <strong id="weeklyTotal">0</strong> tâches</span>
                 </div>
@@ -607,21 +194,20 @@
 
             <!-- Habitudes Tracker -->
             <div
-                class="glass-panel rounded-xl bg-white dark:bg-indigo-card shadow-sm dark:shadow-none border border-gray-200 dark:border-white/5 p-6">
+                class="glass-panel rounded-xl p-6">
                 <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center gap-2">
                         <span class="text-2xl">✅</span>
-                        <h3 class="text-sm font-bold tracking-widest text-gray-600 dark:text-gray-300 uppercase">
-                            Habitudes</h3>
+                        <h3 class="text-sm font-bold tracking-widest text-subtle uppercase">Habitudes</h3>
                     </div>
                     <button type="button" onclick="openHabitModal()"
-                        class="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-medium transition-all">
+                        class="btn btn-soft btn-sm">
                         <span class="material-icons-round text-sm">add</span>
                         Ajouter
                     </button>
                 </div>
                 <div id="habitsContainer" class="space-y-3">
-                    <div class="text-center py-8 text-gray-400 dark:text-gray-500">
+                    <div class="text-center py-8 text-faint">
                         <span class="text-3xl mb-2 block">🎯</span>
                         <p class="text-sm">Aucune habitude définie</p>
                     </div>
@@ -630,21 +216,19 @@
         </div>
 
         <!-- Vue Ma Journée & Mini Calendrier -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6" id="section-today">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 reveal" style="--delay: 0.4s;" id="section-today">
             <!-- Ma Journée -->
             <div
-                class="lg:col-span-2 glass-panel rounded-xl bg-white dark:bg-indigo-card shadow-sm dark:shadow-none border border-gray-200 dark:border-white/5 p-6">
+                class="lg:col-span-2 glass-panel rounded-xl p-6">
                 <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center gap-2">
                         <span class="text-2xl">☀️</span>
-                        <h3 class="text-sm font-bold tracking-widest text-gray-600 dark:text-gray-300 uppercase">Ma
-                            Journée</h3>
+                        <h3 class="text-sm font-bold tracking-widest text-subtle uppercase">Ma Journée</h3>
                     </div>
-                    <span class="text-xs text-gray-500 dark:text-gray-400" id="todayTaskCount">0 tâches
-                        prioritaires</span>
+                    <span class="text-xs text-muted" id="todayTaskCount">0 tâches prioritaires</span>
                 </div>
                 <div id="todayTasksContainer" class="space-y-2">
-                    <div class="text-center py-8 text-gray-400 dark:text-gray-500">
+                    <div class="text-center py-8 text-faint">
                         <span class="text-3xl mb-2 block">🌅</span>
                         <p class="text-sm">Aucune tâche urgente pour aujourd'hui</p>
                     </div>
@@ -653,150 +237,147 @@
 
             <!-- Mini Calendrier -->
             <div
-                class="glass-panel rounded-xl bg-white dark:bg-indigo-card shadow-sm dark:shadow-none border border-gray-200 dark:border-white/5 p-6">
+                class="glass-panel rounded-xl p-6">
                 <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center gap-2">
                         <span class="text-2xl">🗓️</span>
-                        <h3 class="text-sm font-bold tracking-widest text-gray-600 dark:text-gray-300 uppercase">
-                            Calendrier</h3>
+                        <h3 class="text-sm font-bold tracking-widest text-subtle uppercase">Calendrier</h3>
                     </div>
                     <div class="flex items-center gap-1">
                         <button type="button" onclick="changeMonth(-1)"
-                            class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                            <span class="material-icons-round text-sm text-gray-500">chevron_left</span>
+                            class="action-btn">
+                            <span class="material-icons-round text-sm">chevron_left</span>
                         </button>
                         <span id="calendarMonthLabel"
-                            class="text-xs font-medium text-gray-600 dark:text-gray-300 min-w-[80px] text-center">Jan
+                            class="text-xs font-medium text-subtle min-w-[80px] text-center">Jan
                             2026</span>
                         <button type="button" onclick="changeMonth(1)"
-                            class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                            <span class="material-icons-round text-sm text-gray-500">chevron_right</span>
+                            class="action-btn">
+                            <span class="material-icons-round text-sm">chevron_right</span>
                         </button>
                     </div>
                 </div>
                 <div id="miniCalendar" class="grid grid-cols-7 gap-1 text-center">
-                    <div class="text-xs font-medium text-gray-400 py-1">L</div>
-                    <div class="text-xs font-medium text-gray-400 py-1">M</div>
-                    <div class="text-xs font-medium text-gray-400 py-1">M</div>
-                    <div class="text-xs font-medium text-gray-400 py-1">J</div>
-                    <div class="text-xs font-medium text-gray-400 py-1">V</div>
-                    <div class="text-xs font-medium text-gray-400 py-1">S</div>
-                    <div class="text-xs font-medium text-gray-400 py-1">D</div>
+                    <div class="text-xs font-medium text-faint py-1">L</div>
+                    <div class="text-xs font-medium text-faint py-1">M</div>
+                    <div class="text-xs font-medium text-faint py-1">M</div>
+                    <div class="text-xs font-medium text-faint py-1">J</div>
+                    <div class="text-xs font-medium text-faint py-1">V</div>
+                    <div class="text-xs font-medium text-faint py-1">S</div>
+                    <div class="text-xs font-medium text-faint py-1">D</div>
                 </div>
                 <div id="calendarDays" class="grid grid-cols-7 gap-1 mt-1"></div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-[500px]">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-[500px] reveal" style="--delay: 0.45s;">
             <aside
-                class="glass-panel rounded-xl p-4 lg:col-span-1 bg-white dark:bg-indigo-card shadow-sm dark:shadow-none h-full border border-gray-200 dark:border-white/5">
-                <h2 class="text-xs font-bold tracking-widest text-gray-500 dark:text-gray-400 uppercase mb-4 px-2">
+                class="glass-panel rounded-xl p-4 lg:col-span-1 h-full">
+                <h2 class="text-xs font-bold tracking-widest text-muted uppercase mb-4 px-2">
                     Catégories</h2>
                 <nav class="space-y-1">
                     <button type="button"
-                        class="category-item active flex items-center justify-between px-3 py-3 rounded-lg text-gray-700 dark:text-gray-300 border-l-4 border-transparent transition-all group"
+                        class="category-item active flex items-center justify-between px-3 py-3 rounded-lg text-subtle border-l-4 border-transparent transition-all group"
                         data-category="all">
                         <div class="flex items-center gap-3">
                             <span class="text-lg opacity-80 group-hover:scale-110 transition-transform">⛩️</span>
                             <span class="font-medium text-sm">Toutes</span>
                         </div>
                         <span
-                            class="text-xs font-bold bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full text-gray-500 dark:text-gray-400"
+                            class="text-xs font-bold bg-surface-2 px-2 py-0.5 rounded-full text-muted"
                             id="countAll">0</span>
                     </button>
                     <button type="button"
-                        class="category-item flex items-center justify-between px-3 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-indigo-lighter/30 text-gray-700 dark:text-gray-300 border-l-4 border-transparent hover:border-blue-400 transition-all group"
+                        class="category-item flex items-center justify-between px-3 py-3 rounded-lg text-subtle border-l-4 border-transparent transition-all group"
                         data-category="easynode">
                         <div class="flex items-center gap-3">
-                            <span
-                                class="material-icons-round text-blue-400 text-lg group-hover:scale-110 transition-transform">rocket_launch</span>
+                            <span class="material-icons-round text-info text-lg group-hover:scale-110 transition-transform">rocket_launch</span>
                             <span class="font-medium text-sm">EasyNode</span>
                         </div>
                         <span
-                            class="text-xs font-bold bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full text-gray-500 dark:text-gray-400"
+                            class="text-xs font-bold bg-surface-2 px-2 py-0.5 rounded-full text-muted"
                             id="countEasynode">0</span>
                     </button>
                     <button type="button"
-                        class="category-item flex items-center justify-between px-3 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-indigo-lighter/30 text-gray-700 dark:text-gray-300 border-l-4 border-transparent hover:border-emerald-400 transition-all group"
+                        class="category-item flex items-center justify-between px-3 py-3 rounded-lg text-subtle border-l-4 border-transparent transition-all group"
                         data-category="immobilier">
                         <div class="flex items-center gap-3">
                             <span class="text-lg group-hover:scale-110 transition-transform">🏯</span>
                             <span class="font-medium text-sm">Immobilier</span>
                         </div>
                         <span
-                            class="text-xs font-bold bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full text-gray-500 dark:text-gray-400"
+                            class="text-xs font-bold bg-surface-2 px-2 py-0.5 rounded-full text-muted"
                             id="countImmobilier">0</span>
                     </button>
                     <button type="button"
-                        class="category-item flex items-center justify-between px-3 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-indigo-lighter/30 text-gray-700 dark:text-gray-300 border-l-4 border-transparent hover:border-purple-400 transition-all group"
+                        class="category-item flex items-center justify-between px-3 py-3 rounded-lg text-subtle border-l-4 border-transparent transition-all group"
                         data-category="content">
                         <div class="flex items-center gap-3">
                             <span
-                                class="material-icons-round text-purple-400 text-lg group-hover:scale-110 transition-transform">smartphone</span>
+                                class="material-icons-round text-accent text-lg group-hover:scale-110 transition-transform">smartphone</span>
                             <span class="font-medium text-sm">Content</span>
                         </div>
                         <span
-                            class="text-xs font-bold bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full text-gray-500 dark:text-gray-400"
+                            class="text-xs font-bold bg-surface-2 px-2 py-0.5 rounded-full text-muted"
                             id="countContent">0</span>
                     </button>
                     <button type="button"
-                        class="category-item flex items-center justify-between px-3 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-indigo-lighter/30 text-gray-700 dark:text-gray-300 border-l-4 border-transparent hover:border-pink-300 transition-all group"
+                        class="category-item flex items-center justify-between px-3 py-3 rounded-lg text-subtle border-l-4 border-transparent transition-all group"
                         data-category="personnel">
                         <div class="flex items-center gap-3">
                             <span class="text-lg group-hover:scale-110 transition-transform">🎋</span>
                             <span class="font-medium text-sm">Personnel</span>
                         </div>
                         <span
-                            class="text-xs font-bold bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full text-gray-500 dark:text-gray-400"
+                            class="text-xs font-bold bg-surface-2 px-2 py-0.5 rounded-full text-muted"
                             id="countPersonnel">0</span>
                     </button>
                     <button type="button"
-                        class="category-item flex items-center justify-between px-3 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-indigo-lighter/30 text-gray-700 dark:text-gray-300 border-l-4 border-transparent hover:border-gray-400 transition-all group"
+                        class="category-item flex items-center justify-between px-3 py-3 rounded-lg text-subtle border-l-4 border-transparent transition-all group"
                         data-category="admin">
                         <div class="flex items-center gap-3">
-                            <span
-                                class="material-icons-round text-gray-400 text-lg group-hover:scale-110 transition-transform">description</span>
+                            <span class="material-icons-round text-muted text-lg group-hover:scale-110 transition-transform">description</span>
                             <span class="font-medium text-sm">Admin</span>
                         </div>
                         <span
-                            class="text-xs font-bold bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full text-gray-500 dark:text-gray-400"
+                            class="text-xs font-bold bg-surface-2 px-2 py-0.5 rounded-full text-muted"
                             id="countAdmin">0</span>
                     </button>
                 </nav>
-                <div class="mt-6 border-t border-gray-200 dark:border-white/5 pt-4">
-                    <h3 class="text-xs font-bold tracking-widest text-gray-500 dark:text-gray-400 uppercase mb-3 px-2">
+                <div class="mt-6 border-t border-subtle pt-4">
+                    <h3 class="text-xs font-bold tracking-widest text-muted uppercase mb-3 px-2">
                         Liens utiles</h3>
                     <div class="space-y-2">
-                        <a class="flex items-center justify-between px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-indigo-lighter/30 transition-all"
+                        <a class="flex items-center justify-between px-3 py-2 rounded-lg text-sm text-subtle link-row transition-all"
                             href="#section-stats">Statistiques</a>
-                        <a class="flex items-center justify-between px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-indigo-lighter/30 transition-all"
+                        <a class="flex items-center justify-between px-3 py-2 rounded-lg text-sm text-subtle link-row transition-all"
                             href="#section-progress">Progression</a>
-                        <a class="flex items-center justify-between px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-indigo-lighter/30 transition-all"
+                        <a class="flex items-center justify-between px-3 py-2 rounded-lg text-sm text-subtle link-row transition-all"
                             href="#section-tasks">Tâches</a>
-                        <a class="flex items-center justify-between px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-indigo-lighter/30 transition-all"
+                        <a class="flex items-center justify-between px-3 py-2 rounded-lg text-sm text-subtle link-row transition-all"
                             href="#section-add">Ajout rapide</a>
                     </div>
                 </div>
             </aside>
             <main
-                class="glass-panel rounded-xl lg:col-span-3 bg-white dark:bg-indigo-card shadow-sm dark:shadow-none flex flex-col border border-gray-200 dark:border-white/5 relative overflow-hidden"
+                class="glass-panel rounded-xl lg:col-span-3 flex flex-col border border-subtle relative overflow-hidden"
                 id="section-tasks">
-                <div class="absolute inset-0 opacity-[0.03] dark:opacity-[0.05] pointer-events-none"
-                    style="background-image: radial-gradient(circle, #999 1px, transparent 1px); background-size: 20px 20px;">
+                <div class="absolute inset-0 opacity-[0.04] pointer-events-none"
+                    style="background-image: radial-gradient(circle, rgba(86, 98, 115, 0.35) 1px, transparent 1px); background-size: 22px 22px;">
                 </div>
                 <div
-                    class="p-6 border-b border-gray-200 dark:border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative z-10">
-                    <h2 class="text-xl font-display font-medium text-gray-800 dark:text-white" id="sectionTitle">Toutes
+                    class="p-6 border-b border-subtle flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative z-10">
+                    <h2 class="text-xl font-display font-medium text-ink" id="sectionTitle">Toutes
                         les tâches</h2>
-                    <div class="flex p-1 bg-gray-100 dark:bg-indigo-lighter/30 rounded-lg">
+                    <div class="flex p-1 bg-surface-2 rounded-lg border border-subtle">
                         <button type="button"
                             class="filter-tab px-4 py-1.5 rounded-md text-xs font-medium transition-all active"
                             data-status="all">Toutes</button>
                         <button type="button"
-                            class="filter-tab px-4 py-1.5 rounded-md text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-all"
+                            class="filter-tab px-4 py-1.5 rounded-md text-xs font-medium transition-all"
                             data-status="pending">En attente</button>
                         <button type="button"
-                            class="filter-tab px-4 py-1.5 rounded-md text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-all"
+                            class="filter-tab px-4 py-1.5 rounded-md text-xs font-medium transition-all"
                             data-status="archived">Archives</button>
                     </div>
                 </div>
@@ -804,12 +385,12 @@
                     <div class="flex gap-2 mb-10" id="section-add">
                         <div class="relative flex-grow">
                             <input
-                                class="w-full bg-gray-50 dark:bg-indigo-lighter/20 border border-gray-200 dark:border-white/10 rounded-lg py-3 px-4 text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                                class="field field-compact"
                                 placeholder="Ajouter rapidement une tâche... (Entrée pour valider)" type="text"
                                 id="quickAddInput" />
                         </div>
                         <button type="button"
-                            class="bg-primary hover:bg-primary-hover text-white rounded-lg px-4 flex items-center justify-center transition-colors shadow-lg shadow-primary/20"
+                            class="btn btn-primary btn-icon"
                             onclick="quickAdd()">
                             <span class="material-icons-round">add</span>
                         </button>
@@ -817,8 +398,7 @@
                     <div class="space-y-3" id="todoList">
                         <div class="flex flex-col items-center justify-center h-64 text-center mt-4">
                             <div class="relative mb-6">
-                                <div
-                                    class="w-32 h-32 rounded-full bg-gradient-to-b from-transparent to-gray-100 dark:to-indigo-lighter/10 flex items-center justify-center">
+                                <div class="w-32 h-32 rounded-full halo flex items-center justify-center">
                                     <span class="text-6xl drop-shadow-xl animate-pulse">🗻</span>
                                 </div>
                                 <div class="absolute -top-2 right-0 text-xl animate-bounce"
@@ -826,15 +406,14 @@
                                 <div class="absolute top-10 -left-4 text-lg animate-bounce"
                                     style="animation-duration: 4s; animation-delay: 1s;">🌸</div>
                             </div>
-                            <h3 class="text-lg font-display font-medium text-gray-700 dark:text-gray-200 mb-1">Aucune
-                                tâche ici!</h3>
-                            <p class="text-sm text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
+                            <h3 class="text-lg font-display font-medium text-subtle mb-1">Aucune tâche ici!</h3>
+                            <p class="text-sm text-muted max-w-xs mx-auto">
                                 L'esprit est clair comme l'eau calme.<br />Profitez de ce moment de sérénité.
                             </p>
                         </div>
                     </div>
                 </div>
-                <div class="h-1 w-full bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>
+                <div class="h-1 w-full section-glow"></div>
             </main>
         </div>
     </div>
@@ -845,17 +424,18 @@
             <form id="todoForm">
                 <input type="hidden" id="todoId" />
                 <div class="form-group">
-                    <label for="todoTitle">Titre</label>
-                    <input type="text" id="todoTitle" required placeholder="Ex: Finir le script LLM" />
+                    <label class="label" for="todoTitle">Titre</label>
+                    <input class="field" type="text" id="todoTitle" required placeholder="Ex: Finir le script LLM" />
                 </div>
                 <div class="form-group">
-                    <label for="todoDescription">Description (optionnel)</label>
-                    <textarea id="todoDescription" rows="2" placeholder="Détails supplémentaires..."></textarea>
+                    <label class="label" for="todoDescription">Description (optionnel)</label>
+                    <textarea class="field" id="todoDescription" rows="2"
+                        placeholder="Détails supplémentaires..."></textarea>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="todoCategory">Catégorie</label>
-                        <select id="todoCategory">
+                        <label class="label" for="todoCategory">Catégorie</label>
+                        <select class="field" id="todoCategory">
                             <option value="easynode">🚀 EasyNode</option>
                             <option value="immobilier">🏯 Immobilier</option>
                             <option value="content">📱 Content</option>
@@ -864,8 +444,8 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="todoPriority">Priorité</label>
-                        <select id="todoPriority">
+                        <label class="label" for="todoPriority">Priorité</label>
+                        <select class="field" id="todoPriority">
                             <option value="normal">🟡 Normal</option>
                             <option value="important">🟠 Important</option>
                             <option value="urgent">🔴 Urgent</option>
@@ -873,15 +453,15 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="todoDeadline">Deadline (optionnel)</label>
-                    <input type="datetime-local" id="todoDeadline" />
+                    <label class="label" for="todoDeadline">Deadline (optionnel)</label>
+                    <input class="field" type="datetime-local" id="todoDeadline" />
                 </div>
                 <div class="modal-actions">
                     <button type="button"
-                        class="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-200 dark:bg-indigo-lighter/40 hover:bg-gray-300 dark:hover:bg-indigo-lighter transition-all text-sm font-medium text-gray-700 dark:text-gray-200"
+                        class="btn btn-secondary"
                         onclick="closeModal()">Annuler</button>
                     <button type="submit"
-                        class="flex items-center gap-2 px-5 py-2 rounded-lg bg-primary hover:bg-primary-hover transition-all text-sm font-semibold text-white shadow-lg shadow-primary/20">Enregistrer</button>
+                        class="btn btn-primary">Enregistrer</button>
                 </div>
             </form>
         </div>
@@ -894,24 +474,26 @@
             <form id="roadmapForm">
                 <input type="hidden" id="roadmapItemId" />
                 <div class="form-group">
-                    <label for="roadmapTitle">Titre</label>
-                    <input type="text" id="roadmapTitle" required placeholder="Ex: Lancer EasyNode v2.0" />
+                    <label class="label" for="roadmapTitle">Titre</label>
+                    <input class="field" type="text" id="roadmapTitle" required
+                        placeholder="Ex: Lancer EasyNode v2.0" />
                 </div>
                 <div class="form-group">
-                    <label for="roadmapDescription">Description (optionnel)</label>
-                    <textarea id="roadmapDescription" rows="2" placeholder="Détails sur cet objectif..."></textarea>
+                    <label class="label" for="roadmapDescription">Description (optionnel)</label>
+                    <textarea class="field" id="roadmapDescription" rows="2"
+                        placeholder="Détails sur cet objectif..."></textarea>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="roadmapType">Type</label>
-                        <select id="roadmapType">
+                        <label class="label" for="roadmapType">Type</label>
+                        <select class="field" id="roadmapType">
                             <option value="mid_term">📅 Mi-terme (3-6 mois)</option>
                             <option value="long_term">🎯 Long-terme (6+ mois)</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="roadmapStatus">Statut</label>
-                        <select id="roadmapStatus">
+                        <label class="label" for="roadmapStatus">Statut</label>
+                        <select class="field" id="roadmapStatus">
                             <option value="not_started">⏳ Non démarré</option>
                             <option value="in_progress">🔄 En cours</option>
                             <option value="completed">✅ Terminé</option>
@@ -919,15 +501,15 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="roadmapTargetDate">Date cible</label>
-                    <input type="date" id="roadmapTargetDate" />
+                    <label class="label" for="roadmapTargetDate">Date cible</label>
+                    <input class="field" type="date" id="roadmapTargetDate" />
                 </div>
                 <div class="modal-actions">
                     <button type="button"
-                        class="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-200 dark:bg-indigo-lighter/40 hover:bg-gray-300 dark:hover:bg-indigo-lighter transition-all text-sm font-medium text-gray-700 dark:text-gray-200"
+                        class="btn btn-secondary"
                         onclick="closeRoadmapModal()">Annuler</button>
                     <button type="submit"
-                        class="flex items-center gap-2 px-5 py-2 rounded-lg bg-primary hover:bg-primary-hover transition-all text-sm font-semibold text-white shadow-lg shadow-primary/20">Enregistrer</button>
+                        class="btn btn-primary">Enregistrer</button>
                 </div>
             </form>
         </div>
@@ -939,13 +521,14 @@
             <h2 class="font-display">Nouvelle habitude</h2>
             <form id="habitForm">
                 <div class="form-group">
-                    <label for="habitName">Nom de l'habitude</label>
-                    <input type="text" id="habitName" required placeholder="Ex: Méditation 10 min" />
+                    <label class="label" for="habitName">Nom de l'habitude</label>
+                    <input class="field" type="text" id="habitName" required
+                        placeholder="Ex: Méditation 10 min" />
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="habitEmoji">Emoji</label>
-                        <select id="habitEmoji">
+                        <label class="label" for="habitEmoji">Emoji</label>
+                        <select class="field" id="habitEmoji">
                             <option value="✅">✅ Check</option>
                             <option value="🧘">🧘 Méditation</option>
                             <option value="📚">📚 Lecture</option>
@@ -958,8 +541,8 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="habitColor">Couleur</label>
-                        <select id="habitColor">
+                        <label class="label" for="habitColor">Couleur</label>
+                        <select class="field" id="habitColor">
                             <option value="#10b981">🟢 Vert</option>
                             <option value="#3b82f6">🔵 Bleu</option>
                             <option value="#8b5cf6">🟣 Violet</option>
@@ -971,10 +554,10 @@
                 </div>
                 <div class="modal-actions">
                     <button type="button"
-                        class="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-200 dark:bg-indigo-lighter/40 hover:bg-gray-300 dark:hover:bg-indigo-lighter transition-all text-sm font-medium text-gray-700 dark:text-gray-200"
+                        class="btn btn-secondary"
                         onclick="closeHabitModal()">Annuler</button>
                     <button type="submit"
-                        class="flex items-center gap-2 px-5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 transition-all text-sm font-semibold text-white shadow-lg shadow-emerald-500/20">Créer</button>
+                        class="btn btn-success">Créer</button>
                 </div>
             </form>
         </div>
@@ -1238,14 +821,14 @@
                 list.innerHTML = `
                 <div class="flex flex-col items-center justify-center h-64 text-center mt-4">
                     <div class="relative mb-6">
-                        <div class="w-32 h-32 rounded-full bg-gradient-to-b from-transparent to-gray-100 dark:to-indigo-lighter/10 flex items-center justify-center">
+                        <div class="w-32 h-32 rounded-full halo flex items-center justify-center">
                             <span class="text-6xl drop-shadow-xl animate-pulse">🗻</span>
                         </div>
                         <div class="absolute -top-2 right-0 text-xl animate-bounce" style="animation-duration: 3s;">🌸</div>
                         <div class="absolute top-10 -left-4 text-lg animate-bounce" style="animation-duration: 4s; animation-delay: 1s;">🌸</div>
                     </div>
-                    <h3 class="text-lg font-display font-medium text-gray-700 dark:text-gray-200 mb-1">Aucune tâche ici!</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
+                    <h3 class="text-lg font-display font-medium text-subtle mb-1">Aucune tâche ici!</h3>
+                    <p class="text-sm text-muted max-w-xs mx-auto">
                         L'esprit est clair comme l'eau calme.<br/>Profitez de ce moment de sérénité.
                     </p>
                 </div>
@@ -1469,7 +1052,7 @@
                 container.innerHTML = `
                     <div class="flex flex-col items-center justify-center h-40 text-center">
                         <span class="text-4xl mb-3 animate-pulse">🎯</span>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Aucun objectif ${typeLabel} défini. Ajoutez votre premier objectif!</p>
+                        <p class="text-sm text-muted">Aucun objectif ${typeLabel} défini. Ajoutez votre premier objectif!</p>
                     </div>
                 `;
                 return;
@@ -1483,15 +1066,15 @@
                 }[item.status] || '📋';
 
                 const statusClass = {
-                    'not_started': 'bg-gray-500/20 text-gray-400',
-                    'in_progress': 'bg-blue-500/20 text-blue-400',
-                    'completed': 'bg-green-500/20 text-green-400'
-                }[item.status] || 'bg-gray-500/20 text-gray-400';
+                    'not_started': 'status-pill status-idle',
+                    'in_progress': 'status-pill status-progress',
+                    'completed': 'status-pill status-completed'
+                }[item.status] || 'status-pill status-idle';
 
                 const targetDate = item.target_date ? new Date(item.target_date).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' }) : 'Non définie';
 
                 return `
-                    <div class="glass-panel p-4 rounded-xl border border-gray-200 dark:border-white/5 hover:border-primary/30 transition-all group ${item.status === 'completed' ? 'opacity-60' : ''}">
+                    <div class="glass-panel p-4 rounded-xl border border-subtle card-hover group ${item.status === 'completed' ? 'opacity-70' : ''}">
                         <div class="flex items-start justify-between mb-2">
                             <span class="text-2xl">${item.type === 'mid_term' ? '📅' : '🎯'}</span>
                             <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -1499,11 +1082,11 @@
                                 <button class="action-btn delete" onclick="deleteRoadmapItem(${item.id})">🗑️</button>
                             </div>
                         </div>
-                        <h4 class="font-medium text-gray-800 dark:text-white mb-1 ${item.status === 'completed' ? 'line-through' : ''}">${item.title}</h4>
-                        ${item.description ? `<p class="text-xs text-gray-500 dark:text-gray-400 mb-3">${item.description}</p>` : ''}
+                        <h4 class="font-medium text-ink mb-1 ${item.status === 'completed' ? 'line-through' : ''}">${item.title}</h4>
+                        ${item.description ? `<p class="text-xs text-muted mb-3">${item.description}</p>` : ''}
                         <div class="flex items-center justify-between mt-3">
                             <span class="text-xs ${statusClass} px-2 py-1 rounded-full">${statusEmoji} ${item.status.replace('_', ' ')}</span>
-                            <span class="text-xs text-gray-500 dark:text-gray-400">🗓️ ${targetDate}</span>
+                            <span class="text-xs text-muted">🗓️ ${targetDate}</span>
                         </div>
                     </div>
                 `;
@@ -1667,6 +1250,14 @@
 
         function renderChart(stats) {
             const ctx = document.getElementById('productivityChart').getContext('2d');
+            const styles = getComputedStyle(document.documentElement);
+            const accent = styles.getPropertyValue('--accent').trim() || '#0F7C7F';
+            const accentWarm = styles.getPropertyValue('--accent-warm').trim() || '#C97A2D';
+            const tooltipBg = styles.getPropertyValue('--bg-surface').trim() || '#141A22';
+            const tooltipTitle = styles.getPropertyValue('--text-primary').trim() || '#E6EDF3';
+            const tooltipBody = styles.getPropertyValue('--text-secondary').trim() || '#B9C2CD';
+            const gridColor = styles.getPropertyValue('--border').trim() || 'rgba(148, 163, 184, 0.1)';
+            const tickColor = styles.getPropertyValue('--text-muted').trim() || '#97A3B2';
 
             // Prepare data
             const labels = stats.map(s => new Date(s.date).toLocaleDateString('fr-FR', { weekday: 'short' }));
@@ -1685,14 +1276,14 @@
                         {
                             label: 'Complétées',
                             data: completedData,
-                            backgroundColor: '#D65C7C',
+                            backgroundColor: accent,
                             borderRadius: 4,
                             barThickness: 12
                         },
                         {
                             label: 'Créées',
                             data: createdData,
-                            backgroundColor: '#CBD5E1', // or dark mode variant
+                            backgroundColor: accentWarm,
                             borderRadius: 4,
                             barThickness: 12,
                             hidden: true // hide by default to keep clean
@@ -1705,9 +1296,9 @@
                     plugins: {
                         legend: { display: false },
                         tooltip: {
-                            backgroundColor: '#1E293B',
-                            titleColor: '#fff',
-                            bodyColor: '#cbd5e1',
+                            backgroundColor: tooltipBg,
+                            titleColor: tooltipTitle,
+                            bodyColor: tooltipBody,
                             padding: 10,
                             cornerRadius: 8,
                             displayColors: false
@@ -1717,7 +1308,7 @@
                         y: {
                             beginAtZero: true,
                             grid: {
-                                color: 'rgba(148, 163, 184, 0.1)',
+                                color: gridColor,
                                 drawBorder: false
                             },
                             ticks: { display: false }
@@ -1725,7 +1316,7 @@
                         x: {
                             grid: { display: false },
                             ticks: {
-                                color: '#94A3B8',
+                                color: tickColor,
                                 font: { size: 10 }
                             }
                         }
@@ -1751,7 +1342,7 @@
             const container = document.getElementById('habitsContainer');
             if (habits.length === 0) {
                 container.innerHTML = `
-                    <div class="text-center py-6 text-gray-400 dark:text-gray-500">
+                    <div class="text-center py-6 text-faint">
                         <span class="text-3xl mb-2 block">🎯</span>
                         <p class="text-xs">Aucune habitude définie</p>
                     </div>`;
@@ -1761,21 +1352,21 @@
             container.innerHTML = habits.map(habit => {
                 const isDone = habit.today_completed === 1;
                 return `
-                <div class="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-indigo-lighter/20 border border-transparent hover:border-gray-200 dark:hover:border-white/5 transition-all group">
+                <div class="flex items-center justify-between p-3 habit-card card-hover group">
                     <div class="flex items-center gap-3">
-                        <span class="text-xl bg-white dark:bg-indigo-card p-1.5 rounded-lg shadow-sm">${habit.emoji}</span>
+                        <span class="text-xl bg-surface p-1.5 rounded-lg shadow-sm">${habit.emoji}</span>
                         <div>
-                            <div class="font-medium text-sm text-gray-800 dark:text-gray-200">${habit.name}</div>
-                            <div class="text-xs text-gray-400 flex items-center gap-1">
-                                <span class="material-icons-round text-[10px] text-orange-400">local_fire_department</span>
+                            <div class="font-medium text-sm text-ink">${habit.name}</div>
+                            <div class="text-xs text-faint flex items-center gap-1">
+                                <span class="material-icons-round text-[10px] text-warning">local_fire_department</span>
                                 ${habit.streak} jours
                             </div>
                         </div>
                     </div>
-                    <button onclick="toggleHabit(${habit.id})" class="w-8 h-8 rounded-full flex items-center justify-center transition-all ${isDone ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 'bg-gray-200 dark:bg-gray-700 text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-600'}">
+                    <button onclick="toggleHabit(${habit.id})" class="habit-toggle ${isDone ? 'is-done' : ''}">
                         <span class="material-icons-round text-lg">check</span>
                     </button>
-                    <button onclick="deleteHabit(${habit.id})" class="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-400 transition-opacity ml-2">
+                    <button onclick="deleteHabit(${habit.id})" class="action-btn opacity-0 group-hover:opacity-100 transition-opacity ml-2">
                         <span class="material-icons-round text-sm">close</span>
                     </button>
                 </div>`;
@@ -1856,7 +1447,7 @@
             const container = document.getElementById('todayTasksContainer');
             if (tasks.length === 0) {
                 container.innerHTML = `
-                    <div class="text-center py-6 text-gray-400 dark:text-gray-500">
+                    <div class="text-center py-6 text-faint">
                         <span class="text-3xl mb-2 block">🌅</span>
                         <p class="text-sm">Rien d'urgent pour aujourd'hui</p>
                     </div>`;
@@ -1867,11 +1458,11 @@
                 const priorityClass = `priority-${todo.priority}`;
                 const time = todo.deadline ? new Date(todo.deadline).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
                 return `
-                <div class="flex items-center gap-3 p-3 rounded-lg border border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-indigo-lighter/10 hover:bg-white dark:hover:bg-indigo-lighter/20 transition-all">
+                <div class="flex items-center gap-3 p-3 rounded-lg border border-subtle bg-surface-2 card-hover">
                     <div class="todo-checkbox" onclick="toggleTodo(${todo.id}, '${todo.status}')"></div>
                     <div class="flex-1">
-                        <div class="text-sm font-medium text-gray-800 dark:text-gray-200">${todo.title}</div>
-                        <div class="text-xs text-gray-500 flex items-center gap-2 mt-0.5">
+                        <div class="text-sm font-medium text-ink">${todo.title}</div>
+                        <div class="text-xs text-muted flex items-center gap-2 mt-0.5">
                             <span class="${priorityClass} px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">${todo.priority}</span>
                             ${time ? `<span class="flex items-center gap-1"><span class="material-icons-round text-[10px]">schedule</span> ${time}</span>` : ''}
                         </div>
@@ -1922,11 +1513,11 @@
                 const hasTask = data.tasks_by_day[dateKey];
                 const isToday = new Date().toDateString() === new Date(data.year, data.month - 1, day).toDateString();
 
-                const taskIndicator = hasTask ? `<div class="w-1 h-1 rounded-full bg-primary mx-auto mt-0.5"></div>` : '';
-                const todayClass = isToday ? 'bg-primary text-white shadow-lg shadow-primary/30 font-bold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10';
+                const taskIndicator = hasTask ? `<div class="calendar-dot"></div>` : '';
+                const todayClass = isToday ? 'calendar-day today' : 'calendar-day';
 
                 container.innerHTML += `
-                    <div class="h-8 flex flex-col items-center justify-center rounded-lg cursor-pointer transition-all ${todayClass}">
+                    <div class="${todayClass}">
                         <span class="text-xs">${day}</span>
                         ${!isToday ? taskIndicator : ''}
                     </div>

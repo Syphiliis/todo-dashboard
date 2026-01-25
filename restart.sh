@@ -4,6 +4,15 @@
 
 echo "🔄 Redémarrage COMPLET des services Todo Dashboard..."
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+TODO_DIR="$SCRIPT_DIR"
+DCA_DIR="$TODO_DIR/dca"
+DCA_PORT="${DCA_PORT:-3000}"
+DCA_PID_FILE="$DCA_DIR/dca.pid"
+DCA_LOG="$TODO_DIR/dca.log"
+
+cd "$SCRIPT_DIR" || exit 1
+
 # 1. Arrêter le service systemd s'il existe
 if systemctl list-units --full -all | grep -q "todo-dashboard.service"; then
     echo "🛑 Arrêt du service systemd 'todo-dashboard'..."
@@ -14,9 +23,6 @@ fi
 
 # 2. Tuer brutalement TOUS les processus résiduels (uniquement todo-dashboard)
 echo "🛑 Nettoyage des processus..."
-
-# Chemin fixe du projet sur le VPS
-TODO_DIR="/home/ubuntu/todo-dashboard"
 
 # Tuer Gunicorn
 pkill -9 -f "gunicorn.*todo-dashboard" 2>/dev/null && echo "  - Processus Gunicorn tués"
@@ -59,6 +65,29 @@ if [ ! -z "$BOT_PIDS" ]; then
     done
 fi
 
+# Arrêter le serveur DCA (Next.js)
+if [ -d "$DCA_DIR" ]; then
+    if [ -f "$DCA_PID_FILE" ]; then
+        DCA_PID=$(cat "$DCA_PID_FILE")
+        if ps -p "$DCA_PID" > /dev/null 2>&1; then
+            kill -9 "$DCA_PID" 2>/dev/null && echo "  - Serveur DCA arrêté: $DCA_PID"
+        fi
+        rm -f "$DCA_PID_FILE"
+    fi
+fi
+
+# Libérer le port DCA
+if [ -d "$DCA_DIR" ]; then
+    if command -v fuser &> /dev/null; then
+        fuser -k "$DCA_PORT"/tcp 2>/dev/null && echo "  - Port DCA $DCA_PORT libéré (fuser)"
+    else
+        PORT_PID=$(lsof -ti:"$DCA_PORT" 2>/dev/null)
+        if [ ! -z "$PORT_PID" ]; then
+            kill -9 "$PORT_PID" && echo "  - Port DCA $DCA_PORT libéré ($PORT_PID)"
+        fi
+    fi
+fi
+
 # Libérer le port 5001 (avec fuser si disponible, sinon lsof)
 if command -v fuser &> /dev/null; then
     fuser -k 5001/tcp 2>/dev/null && echo "  - Port 5001 libéré (fuser)"
@@ -92,6 +121,21 @@ fi
 source venv/bin/activate
 pip install -r requirements.txt > /dev/null 2>&1
 
+# DCA - dépendances/build
+if [ -d "$DCA_DIR" ]; then
+    echo "📦 Vérification dépendances DCA..."
+    if command -v npm &> /dev/null; then
+        if [ ! -d "$DCA_DIR/node_modules" ]; then
+            (cd "$DCA_DIR" && npm install)
+        fi
+        if [ ! -d "$DCA_DIR/.next" ]; then
+            (cd "$DCA_DIR" && npm run build)
+        fi
+    else
+        echo "⚠️  npm non installé, DCA ignoré"
+    fi
+fi
+
 # 4. Lancer Dashboard
 echo "🚀 Démarrage Dashboard (port 5001)..."
 nohup python3 -m src.app > app.log 2>&1 &
@@ -104,5 +148,23 @@ nohup python3 -m src.bot > bot.log 2>&1 &
 BOT_PID=$!
 echo "  PID: $BOT_PID"
 
+# 6. Lancer DCA
+if [ -d "$DCA_DIR" ]; then
+    echo "📈 Démarrage DCA (port $DCA_PORT)..."
+    if command -v node &> /dev/null; then
+        (
+            cd "$DCA_DIR" || exit 1
+            nohup node node_modules/next/dist/bin/next start -p "$DCA_PORT" > "$DCA_LOG" 2>&1 &
+            echo $! > "$DCA_PID_FILE"
+        )
+        if [ -f "$DCA_PID_FILE" ]; then
+            DCA_PID=$(cat "$DCA_PID_FILE")
+            echo "  PID: $DCA_PID"
+        fi
+    else
+        echo "⚠️  Node.js non installé, DCA non démarré"
+    fi
+fi
+
 echo "✅ Tout est redémarré proprement via ce script!"
-echo "📝 Logs via: tail -f app.log -f bot.log"
+echo "📝 Logs via: tail -f app.log -f bot.log -f dca.log"

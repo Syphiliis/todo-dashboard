@@ -9,6 +9,7 @@ This project follows a modular structure where source code is separated from con
 - `scripts/`: Helper scripts for maintenance or one-off tasks (none yet, but convention).
 - `data/`: Storage for SQLite database and other data files.
 - `static/`: Static assets (HTML, CSS, JS) served by Flask.
+- `dca/`: Next.js DCA app served via Flask proxy.
 - `venv/`: Python virtual environment (ignored by git).
 - `*.sh`: Deployment and management scripts (`restart.sh`, `deploy.sh`).
 - `requirements.txt`: Python dependencies.
@@ -34,8 +35,9 @@ Use the provided script to restart all services:
 This script will:
 1. Stop existing processes (`src.app` and `src.bot`).
 2. Update dependencies.
-3. Start the Dashboard (`src.app`) on port 5000.
+3. Start the Dashboard (`src.app`) on port 5001.
 4. Start the Telegram Bot (`src.bot`).
+5. Start the DCA app (`dca`) on port 3000.
 
 ### Manual Execution
 
@@ -57,5 +59,5 @@ The project is deployed using `systemd`. The `deploy.sh` script configures the s
 
 The service runs gunicorn with the module syntax:
 ```bash
-gunicorn -w 2 -b 0.0.0.0:5000 src.app:app
+gunicorn -w 2 -b 0.0.0.0:5001 src.app:app
 ```

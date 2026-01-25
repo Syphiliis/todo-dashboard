@@ -15,4 +15,5 @@ DASHBOARD_PUBLIC_URL = os.getenv('DASHBOARD_PUBLIC_URL')
 
 TIMEZONE = os.getenv('TIMEZONE', 'Europe/Paris')
 DCA_BACKEND_URL = os.getenv('DCA_BACKEND_URL', 'http://84.46.253.225:8000/analyze')
+DCA_APP_URL = os.getenv('DCA_APP_URL', 'http://127.0.0.1:3000')
 PORT = int(os.getenv('PORT', '5001'))

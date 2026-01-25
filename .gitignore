@@ -20,6 +20,10 @@ data/
 # Logs
 *.log
 
+# Node (DCA)
+dca/node_modules/
+dca/.next/
+
 # Google credentials (NEVER commit these)
 gmail_credentials.json
 token.json

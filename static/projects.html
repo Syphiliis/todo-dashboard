@@ -8,144 +8,33 @@
     <link href="https://fonts.googleapis.com" rel="preconnect" />
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
     <link
-        href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&amp;family=Inter:wght@300;400;500;600&amp;display=swap"
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap"
         rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
-    <style>
-        :root {
-            --bg-primary: #0B1120;
-            --bg-secondary: #1E293B;
-            --bg-card: #334155;
-            --text-primary: #E2E8F0;
-            --text-secondary: #94A3B8;
-            --accent-primary: #D65C7C;
-            --accent-green: #10B981;
-            --accent-orange: #F59E0B;
-            --accent-red: #EF4444;
-            --border-color: #334155;
-        }
-
-        .glass-panel {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .nav-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.55rem 1rem;
-            border-radius: 999px;
-            font-size: 0.7rem;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
-            font-weight: 600;
-            color: var(--text-secondary);
-            background: rgba(148, 163, 184, 0.12);
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            transition: all 0.2s ease;
-        }
-
-        .nav-link:hover {
-            color: var(--text-primary);
-            border-color: rgba(214, 92, 124, 0.35);
-            transform: translateY(-1px);
-        }
-
-        .nav-link.active {
-            color: #0f172a;
-            background: rgba(255, 255, 255, 0.9);
-            border-color: rgba(214, 92, 124, 0.4);
-            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
-        }
-
-        .dark .nav-link.active {
-            color: #ffffff;
-            background: rgba(51, 65, 85, 0.8);
-        }
-
-        .status-pill {
-            padding: 0.25rem 0.7rem;
-            border-radius: 999px;
-            font-size: 0.65rem;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            font-weight: 600;
-        }
-
-        .status-active {
-            background: rgba(16, 185, 129, 0.2);
-            color: #34d399;
-        }
-
-        .status-paused {
-            background: rgba(245, 158, 11, 0.2);
-            color: #fbbf24;
-        }
-
-        .status-completed {
-            background: rgba(148, 163, 184, 0.2);
-            color: #94a3b8;
-        }
-
-        .project-notes {
-            background: rgba(100, 116, 139, 0.1);
-            border-left: 3px solid var(--accent-primary);
-            border-radius: 8px;
-            padding: 0.75rem 1rem;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            white-space: pre-line;
-        }
-
-        .action-btn {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            background: rgba(15, 23, 42, 0.35);
-            color: var(--text-secondary);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-        }
-
-        .action-btn:hover {
-            background: rgba(214, 92, 124, 0.2);
-            color: #f8fafc;
-            border-color: rgba(214, 92, 124, 0.4);
-        }
-
-        .action-btn.delete:hover {
-            background: rgba(239, 68, 68, 0.25);
-            border-color: rgba(239, 68, 68, 0.5);
-        }
-    </style>
+    <link href="/theme.css" rel="stylesheet" />
 </head>
 
-<body class="bg-gray-100 dark:bg-[#0B1120] text-gray-800 dark:text-text-light font-sans min-h-screen">
-    <div class="fixed top-0 left-0 w-full h-full pointer-events-none z-0 opacity-20 dark:opacity-10"
-        style="background-image: radial-gradient(circle, rgba(214, 92, 124, 0.15) 1px, transparent 1px); background-size: 120px 120px;">
-    </div>
+<body class="bg-base text-ink font-sans min-h-screen">
+    <div class="bg-washi fixed top-0 left-0 w-full h-full pointer-events-none z-0"></div>
+    <div class="orb orb-accent fixed -top-32 -right-32 w-80 h-80 rounded-full z-0"></div>
+    <div class="orb orb-warm fixed top-1/2 -left-24 w-72 h-72 rounded-full z-0"></div>
     <div class="relative z-10 max-w-6xl mx-auto p-6 space-y-8">
-        <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 reveal"
+            style="--delay: 0.05s;">
             <div>
                 <div class="flex items-center gap-3">
                     <span class="text-3xl">🧭</span>
-                    <h1 class="text-3xl md:text-4xl font-display font-light tracking-wide text-gray-900 dark:text-white">
+                    <h1 class="text-3xl md:text-4xl font-display font-medium tracking-wide text-ink">
                         Projets en cours
                     </h1>
                 </div>
-                <p class="text-sm text-gray-500 dark:text-text-muted mt-1 ml-1 font-display tracking-widest uppercase text-xs">
+                <p class="text-xs text-muted mt-1 ml-1 font-display tracking-widest uppercase">
                     Notes, objectifs et liens GitHub centralisés
                 </p>
             </div>
-            <nav class="flex flex-wrap gap-3 items-center" aria-label="Navigation principale">
+            <nav class="flex flex-wrap gap-3 items-center reveal" style="--delay: 0.1s;"
+                aria-label="Navigation principale">
                 <a class="nav-link" href="/">Dashboard</a>
                 <a class="nav-link active" href="/projects">Projets</a>
                 <a class="nav-link" href="/dca">DCA</a>
@@ -153,54 +42,54 @@
             </nav>
         </header>
 
-        <section class="glass-panel rounded-xl p-6">
-            <h2 class="text-lg font-semibold text-gray-100 mb-4">Nouveau projet</h2>
+        <section class="glass-panel rounded-xl p-6 reveal" style="--delay: 0.15s;">
+            <h2 class="text-lg font-semibold text-ink mb-4">Nouveau projet</h2>
             <form id="projectForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input type="hidden" id="projectId" />
                 <div class="md:col-span-2">
-                    <label class="text-xs uppercase tracking-widest text-gray-400" for="projectName">Titre</label>
+                    <label class="label" for="projectName">Titre</label>
                     <input id="projectName" type="text" required placeholder="Ex: EasyNode Cluster V2"
-                        class="mt-2 w-full bg-gray-50 dark:bg-indigo-lighter/20 border border-gray-200 dark:border-white/10 rounded-lg py-3 px-4 text-sm text-gray-800 dark:text-gray-200" />
+                        class="field" />
                 </div>
                 <div class="md:col-span-2">
-                    <label class="text-xs uppercase tracking-widest text-gray-400" for="projectDescription">Description</label>
+                    <label class="label" for="projectDescription">Description</label>
                     <textarea id="projectDescription" rows="2" placeholder="Résumé rapide du projet..."
-                        class="mt-2 w-full bg-gray-50 dark:bg-indigo-lighter/20 border border-gray-200 dark:border-white/10 rounded-lg py-3 px-4 text-sm text-gray-800 dark:text-gray-200"></textarea>
+                        class="field"></textarea>
                 </div>
                 <div>
-                    <label class="text-xs uppercase tracking-widest text-gray-400" for="projectGithub">Lien GitHub</label>
+                    <label class="label" for="projectGithub">Lien GitHub</label>
                     <input id="projectGithub" type="url" placeholder="https://github.com/user/repo"
-                        class="mt-2 w-full bg-gray-50 dark:bg-indigo-lighter/20 border border-gray-200 dark:border-white/10 rounded-lg py-3 px-4 text-sm text-gray-800 dark:text-gray-200" />
+                        class="field" />
                 </div>
                 <div>
-                    <label class="text-xs uppercase tracking-widest text-gray-400" for="projectStatus">Statut</label>
+                    <label class="label" for="projectStatus">Statut</label>
                     <select id="projectStatus"
-                        class="mt-2 w-full bg-gray-50 dark:bg-indigo-lighter/20 border border-gray-200 dark:border-white/10 rounded-lg py-3 px-4 text-sm text-gray-800 dark:text-gray-200">
+                        class="field">
                         <option value="active">Actif</option>
                         <option value="paused">En pause</option>
                         <option value="completed">Terminé</option>
                     </select>
                 </div>
                 <div class="md:col-span-2">
-                    <label class="text-xs uppercase tracking-widest text-gray-400" for="projectComment">Notes / Commentaires</label>
+                    <label class="label" for="projectComment">Notes / Commentaires</label>
                     <textarea id="projectComment" rows="3" placeholder="Idées, décisions, prochaines actions..."
-                        class="mt-2 w-full bg-gray-50 dark:bg-indigo-lighter/20 border border-gray-200 dark:border-white/10 rounded-lg py-3 px-4 text-sm text-gray-800 dark:text-gray-200"></textarea>
+                        class="field"></textarea>
                 </div>
                 <div class="md:col-span-2 flex flex-wrap gap-3">
                     <button type="submit"
-                        class="px-6 py-2 rounded-lg bg-primary hover:bg-primary-hover transition-all text-sm font-semibold text-white shadow-lg shadow-primary/20">
+                        class="btn btn-primary">
                         Enregistrer
                     </button>
                     <button type="button" onclick="resetForm()"
-                        class="px-5 py-2 rounded-lg bg-gray-200 dark:bg-indigo-lighter/40 hover:bg-gray-300 dark:hover:bg-indigo-lighter transition-all text-sm font-medium text-gray-700 dark:text-gray-200">
+                        class="btn btn-secondary">
                         Réinitialiser
                     </button>
                 </div>
             </form>
         </section>
 
-        <section class="space-y-4" id="projectsContainer">
-            <div class="text-center py-12 text-gray-400 dark:text-gray-500">
+        <section class="space-y-4 reveal" style="--delay: 0.2s;" id="projectsContainer">
+            <div class="text-center py-12 text-faint">
                 <span class="text-4xl mb-3 block">🗂️</span>
                 <p class="text-sm">Chargement des projets...</p>
             </div>
@@ -229,7 +118,7 @@
             const container = document.getElementById('projectsContainer');
             if (!projects.length) {
                 container.innerHTML = `
-                    <div class="text-center py-12 text-gray-400 dark:text-gray-500">
+                    <div class="text-center py-12 text-faint">
                         <span class="text-4xl mb-3 block">🧩</span>
                         <p class="text-sm">Aucun projet actif. Commence par en créer un !</p>
                     </div>`;
@@ -250,21 +139,21 @@
                 }[project.status] || 'Actif';
 
                 const githubLink = project.github_url
-                    ? `<a href="${project.github_url}" target="_blank" rel="noreferrer" class="text-xs text-blue-300 hover:text-blue-200">🔗 GitHub</a>`
-                    : '<span class="text-xs text-gray-500">Pas de lien GitHub</span>';
+                    ? `<a href="${project.github_url}" target="_blank" rel="noreferrer" class="text-xs text-accent">🔗 GitHub</a>`
+                    : '<span class="text-xs text-muted">Pas de lien GitHub</span>';
 
                 return `
-                    <div class="glass-panel rounded-xl p-6">
+                    <div class="glass-panel rounded-xl p-6 card-hover">
                         <div class="flex flex-wrap items-start justify-between gap-4">
                             <div>
-                                <h3 class="text-lg font-semibold text-white">${project.name}</h3>
-                                <p class="text-sm text-gray-400 mt-1">${project.description || 'Description manquante'}</p>
+                                <h3 class="text-lg font-semibold text-ink">${project.name}</h3>
+                                <p class="text-sm text-muted mt-1">${project.description || 'Description manquante'}</p>
                             </div>
                             <span class="status-pill ${statusClass}">${statusLabel}</span>
                         </div>
                         <div class="mt-4 flex flex-wrap items-center gap-4">
                             ${githubLink}
-                            <span class="text-xs text-gray-500">Créé le ${new Date(project.created_at).toLocaleDateString('fr-FR')}</span>
+                            <span class="text-xs text-faint">Créé le ${new Date(project.created_at).toLocaleDateString('fr-FR')}</span>
                         </div>
                         ${project.comment ? `<div class="project-notes mt-4">${project.comment}</div>` : ''}
                         <div class="mt-4 flex items-center gap-2">

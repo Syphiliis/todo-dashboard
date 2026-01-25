@@ -8,10 +8,10 @@ from datetime import datetime, timedelta
 
 import requests
 from apscheduler.schedulers.background import BackgroundScheduler
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, Response
 from flask_cors import CORS
 
-from src.config import DASHBOARD_ACCESS_TOKEN, DCA_BACKEND_URL, PORT, TIMEZONE
+from src.config import DASHBOARD_ACCESS_TOKEN, DCA_APP_URL, DCA_BACKEND_URL, PORT, TIMEZONE
 from src.db import get_db, init_db
 from src.services.daily_content import generate_daily_content
 from src.services.reminders import check_deadlines, send_daily_recap
@@ -239,10 +239,53 @@ def archives():
     return send_from_directory(app.static_folder, 'archives.html')
 
 
+def proxy_dca(path):
+    """Proxy requests to the DCA Next.js server."""
+    base_url = DCA_APP_URL.rstrip('/')
+    target_url = f"{base_url}/{path.lstrip('/')}"
+    if request.query_string:
+        target_url = f"{target_url}?{request.query_string.decode()}"
+
+    headers = {key: value for key, value in request.headers if key.lower() != 'host'}
+
+    try:
+        resp = requests.request(
+            request.method,
+            target_url,
+            headers=headers,
+            data=request.get_data(),
+            cookies=request.cookies,
+            allow_redirects=False,
+            timeout=30
+        )
+    except requests.RequestException as exc:
+        return jsonify({'error': 'DCA server unavailable', 'detail': str(exc)}), 502
+
+    excluded_headers = {'content-encoding', 'content-length', 'transfer-encoding', 'connection'}
+    response = Response(resp.content, resp.status_code)
+    for key, value in resp.headers.items():
+        if key.lower() not in excluded_headers:
+            response.headers[key] = value
+    return response
+
+
 @app.route('/dca')
-def dca():
-    """Serve the DCA tool view."""
-    return send_from_directory(app.static_folder, 'dca.html')
+@app.route('/dca/<path:path>')
+def dca(path=''):
+    """Serve the DCA tool view via the DCA server."""
+    return proxy_dca(path)
+
+
+@app.route('/_next/<path:path>')
+def dca_next(path):
+    """Serve Next.js assets for the DCA app."""
+    return proxy_dca(f"_next/{path}")
+
+
+@app.route('/api/analyze', methods=['POST'])
+def dca_analyze_proxy():
+    """Proxy DCA analyze requests to the DCA server."""
+    return proxy_dca('api/analyze')
 
 
 @app.route('/api/todos', methods=['GET'])
@@ -657,10 +700,11 @@ def delete_project(project_id):
 
 @app.route('/api/dca/analyze', methods=['POST'])
 def dca_analyze():
-    """Proxy request to DCA backend."""
+    """Proxy request to DCA backend (local DCA app)."""
     data = request.json
     try:
-        resp = requests.post(DCA_BACKEND_URL, json=data, timeout=30)
+        dca_api_url = f"{DCA_APP_URL.rstrip('/')}/api/analyze"
+        resp = requests.post(dca_api_url, json=data, timeout=30)
         return (resp.text, resp.status_code, resp.headers.items())
     except Exception as e:
         return jsonify({'error': str(e)}), 500

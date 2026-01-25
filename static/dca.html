@@ -8,110 +8,33 @@
     <link href="https://fonts.googleapis.com" rel="preconnect" />
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
     <link
-        href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&amp;family=Inter:wght@300;400;500;600&amp;display=swap"
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap"
         rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
-    <style>
-        :root {
-            --bg-primary: #0B1120;
-            --bg-secondary: #1E293B;
-            --bg-card: #334155;
-            --text-primary: #E2E8F0;
-            --text-secondary: #94A3B8;
-            --accent-primary: #D65C7C;
-        }
-
-        .glass-panel {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .nav-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.55rem 1rem;
-            border-radius: 999px;
-            font-size: 0.7rem;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
-            font-weight: 600;
-            color: var(--text-secondary);
-            background: rgba(148, 163, 184, 0.12);
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            transition: all 0.2s ease;
-        }
-
-        .nav-link:hover {
-            color: var(--text-primary);
-            border-color: rgba(214, 92, 124, 0.35);
-            transform: translateY(-1px);
-        }
-
-        .nav-link.active {
-            color: #0f172a;
-            background: rgba(255, 255, 255, 0.9);
-            border-color: rgba(214, 92, 124, 0.4);
-            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
-        }
-
-        .dark .nav-link.active {
-            color: #ffffff;
-            background: rgba(51, 65, 85, 0.8);
-        }
-
-        .result-card {
-            background: rgba(15, 23, 42, 0.45);
-            border: 1px solid rgba(148, 163, 184, 0.18);
-            border-radius: 16px;
-            padding: 1.5rem;
-        }
-
-        .freq-day {
-            padding: 0.25rem 0.6rem;
-            border-radius: 999px;
-            font-size: 0.7rem;
-            background: rgba(148, 163, 184, 0.2);
-            color: var(--text-secondary);
-        }
-
-        .freq-day.best {
-            background: rgba(214, 92, 124, 0.25);
-            color: #f9a8d4;
-        }
-
-        .low-pill {
-            display: inline-flex;
-            padding: 0.2rem 0.6rem;
-            border-radius: 999px;
-            font-size: 0.7rem;
-            background: rgba(51, 65, 85, 0.6);
-            color: var(--text-secondary);
-        }
-    </style>
+    <link href="/theme.css" rel="stylesheet" />
 </head>
 
-<body class="bg-gray-100 dark:bg-[#0B1120] text-gray-800 dark:text-text-light font-sans min-h-screen">
-    <div class="fixed top-0 left-0 w-full h-full pointer-events-none z-0 opacity-20 dark:opacity-10"
-        style="background-image: radial-gradient(circle, rgba(214, 92, 124, 0.15) 1px, transparent 1px); background-size: 120px 120px;">
-    </div>
+<body class="bg-base text-ink font-sans min-h-screen">
+    <div class="bg-washi fixed top-0 left-0 w-full h-full pointer-events-none z-0"></div>
+    <div class="orb orb-accent fixed -top-32 -right-32 w-80 h-80 rounded-full z-0"></div>
+    <div class="orb orb-warm fixed top-1/2 -left-24 w-72 h-72 rounded-full z-0"></div>
     <div class="relative z-10 max-w-6xl mx-auto p-6 space-y-8">
-        <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 reveal"
+            style="--delay: 0.05s;">
             <div>
                 <div class="flex items-center gap-3">
                     <span class="text-3xl">📈</span>
-                    <h1 class="text-3xl md:text-4xl font-display font-light tracking-wide text-gray-900 dark:text-white">
+                    <h1 class="text-3xl md:text-4xl font-display font-medium tracking-wide text-ink">
                         Analyse DCA
                     </h1>
                 </div>
-                <p class="text-sm text-gray-500 dark:text-text-muted mt-1 ml-1 font-display tracking-widest uppercase text-xs">
+                <p class="text-xs text-muted mt-1 ml-1 font-display tracking-widest uppercase">
                     Optimise tes investissements mensuels
                 </p>
             </div>
-            <nav class="flex flex-wrap gap-3 items-center" aria-label="Navigation principale">
+            <nav class="flex flex-wrap gap-3 items-center reveal" style="--delay: 0.1s;"
+                aria-label="Navigation principale">
                 <a class="nav-link" href="/">Dashboard</a>
                 <a class="nav-link" href="/projects">Projets</a>
                 <a class="nav-link active" href="/dca">DCA</a>
@@ -119,32 +42,32 @@
             </nav>
         </header>
 
-        <section class="glass-panel rounded-xl p-6">
+        <section class="glass-panel rounded-xl p-6 reveal" style="--delay: 0.15s;">
             <form id="dcaForm" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="md:col-span-2">
-                    <label class="text-xs uppercase tracking-widest text-gray-400" for="tickers">Tickers</label>
+                    <label class="label" for="tickers">Tickers</label>
                     <input id="tickers" type="text" value="UST.PA, AAPL"
-                        class="mt-2 w-full bg-gray-50 dark:bg-indigo-lighter/20 border border-gray-200 dark:border-white/10 rounded-lg py-3 px-4 text-sm text-gray-800 dark:text-gray-200" />
-                    <p class="text-xs text-gray-500 mt-1">Sépare les tickers par des virgules.</p>
+                        class="field" />
+                    <p class="helper-text mt-1">Sépare les tickers par des virgules.</p>
                 </div>
                 <div>
-                    <label class="text-xs uppercase tracking-widest text-gray-400" for="month">Mois</label>
+                    <label class="label" for="month">Mois</label>
                     <select id="month"
-                        class="mt-2 w-full bg-gray-50 dark:bg-indigo-lighter/20 border border-gray-200 dark:border-white/10 rounded-lg py-3 px-4 text-sm text-gray-800 dark:text-gray-200"></select>
+                        class="field"></select>
                 </div>
                 <div class="md:col-span-3 flex flex-wrap items-center gap-3">
                     <button type="submit"
-                        class="px-6 py-2 rounded-lg bg-primary hover:bg-primary-hover transition-all text-sm font-semibold text-white shadow-lg shadow-primary/20">
+                        class="btn btn-primary">
                         Analyser
                     </button>
-                    <span id="loading" class="text-xs text-gray-400 hidden">Analyse en cours...</span>
-                    <span id="error" class="text-xs text-red-400"></span>
+                    <span id="loading" class="text-xs text-faint hidden">Analyse en cours...</span>
+                    <span id="error" class="text-xs text-danger"></span>
                 </div>
             </form>
         </section>
 
-        <section class="space-y-4" id="resultsContainer">
-            <div class="text-center py-12 text-gray-400 dark:text-gray-500">
+        <section class="space-y-4 reveal" style="--delay: 0.2s;" id="resultsContainer">
+            <div class="text-center py-12 text-faint">
                 <span class="text-4xl mb-3 block">🔍</span>
                 <p class="text-sm">Lance une analyse pour afficher les résultats.</p>
             </div>
@@ -206,7 +129,7 @@
             } catch (err) {
                 error.textContent = err.message;
                 resultsContainer.innerHTML = `
-                    <div class="text-center py-12 text-gray-400 dark:text-gray-500">
+                    <div class="text-center py-12 text-faint">
                         <span class="text-4xl mb-3 block">⚠️</span>
                         <p class="text-sm">${err.message}</p>
                     </div>`;
@@ -219,7 +142,7 @@
             const resultsContainer = document.getElementById('resultsContainer');
             if (!data || !data.results || data.results.length === 0) {
                 resultsContainer.innerHTML = `
-                    <div class="text-center py-12 text-gray-400 dark:text-gray-500">
+                    <div class="text-center py-12 text-faint">
                         <span class="text-4xl mb-3 block">📉</span>
                         <p class="text-sm">Aucun résultat pour ces tickers.</p>
                     </div>`;
@@ -248,22 +171,22 @@
                     }).join('');
                     return `
                         <div class="flex flex-col gap-2">
-                            <span class="text-xs text-gray-400">${year.year}</span>
+                            <span class="text-xs text-faint">${year.year}</span>
                             <div class="flex flex-wrap gap-2">${lows}</div>
                         </div>`;
                 }).join('');
 
                 return `
-                    <div class="result-card">
+                    <div class="result-card card-hover">
                         <div class="flex flex-col gap-2">
-                            <h2 class="text-lg font-semibold text-white">Analyse DCA · ${data.month} · <span class="text-pink-300">${item.ticker}</span></h2>
-                            <p class="text-sm text-gray-400">${bestDays}</p>
+                            <h2 class="text-lg font-semibold text-ink">Analyse DCA · ${data.month} · <span class="text-accent">${item.ticker}</span></h2>
+                            <p class="text-sm text-muted">${bestDays}</p>
                         </div>
                         ${freqDays}
                         <div class="mt-4 space-y-3">${yearsHtml}</div>
-                        ${hiddenCount > 0 ? `<p class="text-xs text-gray-500 mt-2">+ ${hiddenCount} années cachées</p>` : ''}
+                        ${hiddenCount > 0 ? `<p class="text-xs text-faint mt-2">+ ${hiddenCount} années cachées</p>` : ''}
                         <div class="mt-4">
-                            <button class="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs text-gray-200" onclick='downloadCSV(${JSON.stringify(item)}, "${data.month}")'>
+                            <button class="btn btn-outline btn-sm" onclick='downloadCSV(${JSON.stringify(item)}, "${data.month}")'>
                                 💾 Export CSV
                             </button>
                         </div>
