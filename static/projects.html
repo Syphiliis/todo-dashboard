@@ -14,26 +14,36 @@
     <link href="/theme.css" rel="stylesheet" />
 </head>
 
-<body class="bg-base text-ink font-sans min-h-screen">
-    <div class="bg-washi fixed top-0 left-0 w-full h-full pointer-events-none z-0"></div>
-    <div class="orb orb-accent fixed -top-32 -right-32 w-80 h-80 rounded-full z-0"></div>
-    <div class="orb orb-warm fixed top-1/2 -left-24 w-72 h-72 rounded-full z-0"></div>
-    <div class="relative z-10 max-w-6xl mx-auto p-6 space-y-8">
-        <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 reveal"
-            style="--delay: 0.05s;">
+<body class="bg-base text-white font-sans min-h-screen relative overflow-x-hidden">
+    <!-- Cyber backgrounds -->
+    <div class="fixed inset-0 z-0 pointer-events-none">
+        <div
+            class="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-accent opacity-[0.05] blur-[120px]">
+        </div>
+        <div
+            class="absolute bottom-[10%] left-[-5%] w-[35%] h-[35%] rounded-full bg-secondary opacity-[0.03] blur-[100px]">
+        </div>
+    </div>
+
+    <div class="relative z-10 max-w-6xl mx-auto p-6 space-y-10">
+        <header
+            class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-border pb-8">
             <div>
-                <div class="flex items-center gap-3">
-                    <span class="text-3xl">🧭</span>
-                    <h1 class="text-3xl md:text-4xl font-display font-medium tracking-wide text-ink">
-                        Projets en cours
-                    </h1>
+                <div class="flex items-center gap-4">
+                    <div
+                        class="w-12 h-12 rounded-xl bg-gradient-to-br from-accent to-secondary flex items-center justify-center text-2xl shadow-glow">
+                        🧭
+                    </div>
+                    <div>
+                        <h1
+                            class="text-3xl md:text-4xl font-display font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-accent to-white">
+                            Projets
+                        </h1>
+                        <p class="text-sm text-muted mt-1 font-medium">Notes, objectifs et liens GitHub centralisés</p>
+                    </div>
                 </div>
-                <p class="text-xs text-muted mt-1 ml-1 font-display tracking-widest uppercase">
-                    Notes, objectifs et liens GitHub centralisés
-                </p>
             </div>
-            <nav class="flex flex-wrap gap-3 items-center reveal" style="--delay: 0.1s;"
-                aria-label="Navigation principale">
+            <nav class="flex flex-wrap gap-3 items-center" aria-label="Navigation principale">
                 <a class="nav-link" href="/">Dashboard</a>
                 <a class="nav-link active" href="/projects">Projets</a>
                 <a class="nav-link" href="/dca">DCA</a>

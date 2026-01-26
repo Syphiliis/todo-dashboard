@@ -15,30 +15,48 @@
     <link href="/theme.css" rel="stylesheet" />
 </head>
 
-<body class="bg-base text-ink font-sans min-h-screen transition-colors duration-300 relative overflow-x-hidden">
-    <div class="bg-washi fixed top-0 left-0 w-full h-full pointer-events-none z-0"></div>
-    <div class="orb orb-accent fixed -top-32 -right-32 w-96 h-96 rounded-full z-0"></div>
-    <div class="orb orb-warm fixed top-1/2 -left-32 w-80 h-80 rounded-full z-0"></div>
-    <div class="relative z-10 max-w-7xl mx-auto p-4 md:p-8 space-y-8" id="top">
+<body class="bg-base text-white font-sans min-h-screen relative overflow-x-hidden">
+    <!-- Cyber backgrounds -->
+    <div class="fixed inset-0 z-0 pointer-events-none">
+        <div
+            class="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-accent opacity-[0.07] blur-[120px]">
+        </div>
+        <div
+            class="absolute bottom-[10%] left-[-5%] w-[35%] h-[35%] rounded-full bg-secondary opacity-[0.05] blur-[100px]">
+        </div>
+        <div class="absolute inset-0 opacity-[0.03]"
+            style="background-image: radial-gradient(circle, #ffffff 1px, transparent 1px); background-size: 40px 40px;">
+        </div>
+    </div>
+
+    <div class="relative z-10 max-w-7xl mx-auto p-4 md:p-10 space-y-12" id="top">
         <header
-            class="flex flex-col md:flex-row justify-between items-start md:items-center japanese-border-bottom pb-6 gap-4 reveal"
-            style="--delay: 0.05s;">
+            class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-border pb-8 gap-6">
             <div>
-                <div class="flex items-center gap-3">
-                    <span class="text-3xl">🌙</span>
-                    <h1 class="text-3xl md:text-4xl font-display font-medium tracking-wide text-ink">
-                        Alex <span class="text-accent font-semibold">Todo</span> Dashboard
-                    </h1>
+                <div class="flex items-center gap-4">
+                    <div
+                        class="w-12 h-12 rounded-xl bg-gradient-to-br from-accent to-secondary flex items-center justify-center text-2xl shadow-glow">
+                        ⚡
+                    </div>
+                    <div>
+                        <h1
+                            class="text-3xl md:text-4xl font-display font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-accent to-white">
+                            Alex <span class="text-white opacity-90">Dashboard</span>
+                        </h1>
+                        <p class="text-sm text-muted mt-1 font-medium flex items-center gap-2" id="currentDate">
+                            <span class="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
+                            Chargement...
+                        </p>
+                    </div>
                 </div>
-                <p class="text-xs text-muted mt-1 ml-1 font-display tracking-widest uppercase" id="currentDate"></p>
             </div>
             <div class="flex items-center gap-3">
-                <button type="button" class="btn btn-secondary btn-sm" onclick="sendDailySummary()">
-                    <span class="material-icons-round text-base text-info">bar_chart</span>
-                    Résumé Telegram
+                <button type="button" class="btn btn-secondary" onclick="sendDailySummary()">
+                    <span class="material-icons-round text-lg text-accent">telegram</span>
+                    Résumé
                 </button>
                 <button type="button" class="btn btn-primary" onclick="openModal()">
-                    <span class="material-icons-round text-base">add</span>
+                    <span class="material-icons-round text-lg">add</span>
                     Nouvelle tâche
                 </button>
             </div>
@@ -109,30 +127,23 @@
         </div>
 
         <!-- Citation & Fait du jour -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 reveal" style="--delay: 0.25s;" id="section-daily">
-            <div
-                class="glass-panel panel-quote p-5 rounded-xl hover:translate-y-[-2px] transition-transform duration-300">
-                <div class="flex items-start justify-between mb-3">
-                    <div class="flex items-center gap-2">
-                        <span class="text-2xl">💭</span>
-                        <h3 class="text-xs font-bold tracking-widest text-subtle uppercase">Citation du jour</h3>
-                    </div>
-                    <button type="button" class="action-btn" onclick="refreshDailyContent()" title="Regénérer">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 reveal" id="section-daily">
+            <div class="glass-panel p-6 border-l-4 border-accent">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xs font-bold tracking-widest text-accent uppercase">Citation du jour</h3>
+                    <button type="button" class="text-muted hover:text-accent transition-colors"
+                        onclick="refreshDailyContent()">
                         <span class="material-icons-round text-lg">refresh</span>
                     </button>
                 </div>
-                <blockquote class="text-subtle italic text-sm leading-relaxed mb-2" id="dailyQuote">
+                <blockquote class="text-lg font-medium leading-relaxed italic mb-3" id="dailyQuote">
                     "Chargement..."
                 </blockquote>
-                <p class="text-xs text-muted font-medium" id="dailyQuoteAuthor">— ...</p>
+                <p class="text-sm text-muted font-medium" id="dailyQuoteAuthor">— ...</p>
             </div>
-            <div
-                class="glass-panel panel-fact p-5 rounded-xl hover:translate-y-[-2px] transition-transform duration-300">
-                <div class="flex items-center gap-2 mb-3">
-                    <span class="text-2xl">💡</span>
-                    <h3 class="text-xs font-bold tracking-widest text-subtle uppercase">Le saviez-vous ?</h3>
-                </div>
-                <p class="text-subtle text-sm leading-relaxed" id="dailyFunFact">Chargement...</p>
+            <div class="glass-panel p-6 border-l-4 border-secondary">
+                <h3 class="text-xs font-bold tracking-widest text-secondary uppercase mb-4">Le saviez-vous ?</h3>
+                <p class="text-sm text-secondary-contrast leading-relaxed" id="dailyFunFact">Chargement...</p>
             </div>
         </div>
 
