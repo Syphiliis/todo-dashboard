@@ -13,62 +13,74 @@
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
     <script>
         tailwind.config = {
-            darkMode: 'class',
+            darkMode: ['class', '[data-theme="dark"]'],
             theme: {
                 extend: {
                     colors: {
-                        base: '#0a0a0f',
-                        surface: '#12121a',
-                        'surface-2': '#1a1a24',
-                        'surface-3': '#24242e',
-                        accent: '#00d4ff',
-                        secondary: '#8b5cf6',
-                        muted: '#71717a',
-                        faint: '#3f3f46',
-                        border: 'rgba(255, 255, 255, 0.08)',
+                        base: '#f5f5f7',
+                        surface: '#ffffff',
+                        'surface-2': '#fafafa',
+                        'surface-3': '#ffffff',
+                        accent: '#3b82f6',
+                        secondary: '#3b82f6',
+                        muted: '#86868b',
+                        faint: '#aeaeb2',
+                        border: 'rgba(0, 0, 0, 0.1)',
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        danger: '#ef4444',
+                        info: '#3b82f6',
                     }
                 }
             }
         }
     </script>
+    <!-- iOS-like Design System -->
+    <link href="/styles/design-system.css" rel="stylesheet" />
+    <link href="/styles/components.css" rel="stylesheet" />
+    <link href="/styles/utilities.css" rel="stylesheet" />
+    <link href="/styles/animations.css" rel="stylesheet" />
     <link href="/theme.css" rel="stylesheet" />
 </head>
 
-<body class="bg-base text-white font-sans min-h-screen relative overflow-x-hidden">
-    <!-- Cyber backgrounds -->
+<body class="font-sans min-h-screen relative overflow-x-hidden" style="background-color: var(--bg-base); color: var(--text-primary);">
+    <!-- Background effects - Subtle blue gradients -->
     <div class="fixed inset-0 z-0 pointer-events-none">
-        <div
-            class="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-accent opacity-[0.05] blur-[120px]">
-        </div>
-        <div
-            class="absolute bottom-[10%] left-[-5%] w-[35%] h-[35%] rounded-full bg-secondary opacity-[0.03] blur-[100px]">
-        </div>
+        <div class="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full opacity-[0.03] blur-[120px]" style="background: var(--primary);"></div>
+        <div class="absolute bottom-[10%] left-[-5%] w-[35%] h-[35%] rounded-full opacity-[0.02] blur-[100px]" style="background: var(--primary);"></div>
     </div>
 
     <div class="relative z-10 max-w-6xl mx-auto p-6 space-y-10">
         <header
-            class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-border pb-8">
+            class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-8" style="border-bottom: 1px solid var(--border-subtle);">
             <div>
                 <div class="flex items-center gap-4">
                     <div
-                        class="w-12 h-12 rounded-xl bg-gradient-to-br from-accent to-secondary flex items-center justify-center text-2xl shadow-glow">
+                        class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl" style="background: var(--gradient-primary);">
                         📈
                     </div>
                     <div>
                         <h1
-                            class="text-3xl md:text-4xl font-display font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-accent to-white">
+                            class="text-3xl md:text-4xl font-display font-bold tracking-tight" style="color: var(--primary);">
                             Analyse DCA
                         </h1>
-                        <p class="text-sm text-muted mt-1 font-medium">Optimise tes investissements mensuels</p>
+                        <p class="text-sm mt-1 font-medium" style="color: var(--text-muted);">Optimise tes investissements mensuels</p>
                     </div>
                 </div>
             </div>
-            <nav class="flex flex-wrap gap-3 items-center" aria-label="Navigation principale">
-                <a class="nav-link" href="/">Dashboard</a>
-                <a class="nav-link" href="/projects">Projets</a>
-                <a class="nav-link active" href="/dca">DCA</a>
-                <a class="nav-link" href="/archives">Archives</a>
-            </nav>
+            <div class="flex items-center gap-3">
+                <!-- Theme Toggle -->
+                <button type="button" id="themeToggle" class="btn btn-icon" aria-label="Changer le thème" title="Changer le thème">
+                    <span class="material-icons-round theme-icon" data-theme-icon="light">dark_mode</span>
+                    <span class="material-icons-round theme-icon" data-theme-icon="dark">light_mode</span>
+                </button>
+                <nav class="flex flex-wrap gap-3 items-center" aria-label="Navigation principale" role="navigation">
+                    <a class="nav-link" href="/">Dashboard</a>
+                    <a class="nav-link" href="/projects">Projets</a>
+                    <a class="nav-link active" href="/dca" aria-current="page">DCA</a>
+                    <a class="nav-link" href="/archives">Archives</a>
+                </nav>
+            </div>
         </header>
 
         <section class="glass-panel rounded-xl p-6 reveal" style="--delay: 0.15s;">
@@ -99,6 +111,9 @@
             </div>
         </section>
     </div>
+
+    <!-- Theme Switcher -->
+    <script src="/js/theme-switcher.js"></script>
 
     <script>
         const MONTHS = [

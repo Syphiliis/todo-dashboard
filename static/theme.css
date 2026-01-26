@@ -1,48 +1,51 @@
 :root {
-    color-scheme: dark;
+    color-scheme: light dark;
 
-    /* Deep Cyber-Zen Palette */
-    --bg-base: #020203;
-    --bg-surface: rgba(13, 13, 15, 0.85);
-    --bg-surface-elevated: rgba(22, 22, 26, 0.9);
-    --bg-surface-2: #1a1a20;
-    --bg-surface-3: #272730;
-    --bg-muted: #16161a;
-    --bg-subtle: #09090b;
+    /* iOS-like Professional Palette - Light Mode (default, overridden by design-system.css) */
+    --bg-base: #f5f5f7;
+    --bg-surface: #ffffff;
+    --bg-surface-elevated: #fafafa;
+    --bg-surface-2: #fafafa;
+    --bg-surface-3: #ffffff;
+    --bg-muted: #f5f5f7;
+    --bg-subtle: #fafafa;
 
-    /* Cyber Accents */
-    --accent: #00f2ff;
-    /* Neon Teal */
-    --accent-strong: #00d4ff;
-    --accent-glow: rgba(0, 242, 255, 0.3);
-    --accent-soft: rgba(0, 242, 255, 0.1);
-    --accent-contrast: #000000;
+    /* Professional Blue Accents (iOS-like) */
+    --accent: #3b82f6;
+    /* Professional Blue */
+    --accent-strong: #2563eb;
+    --accent-glow: rgba(59, 130, 246, 0.3);
+    --accent-soft: rgba(59, 130, 246, 0.1);
+    --accent-contrast: #ffffff;
 
-    --secondary: #7000ff;
-    /* Ultraviolet */
-    --secondary-strong: #5c00d4;
-    --secondary-glow: rgba(112, 0, 255, 0.3);
-    --secondary-soft: rgba(112, 0, 255, 0.1);
+    --secondary: #3b82f6;
+    /* Same as accent for consistency */
+    --secondary-strong: #2563eb;
+    --secondary-glow: rgba(59, 130, 246, 0.3);
+    --secondary-soft: rgba(59, 130, 246, 0.1);
 
-    --tertiary: #ff007a;
-    /* Cyber Pink */
-    --tertiary-soft: rgba(255, 0, 122, 0.1);
+    --tertiary: #3b82f6;
+    /* Unified blue palette */
+    --tertiary-soft: rgba(59, 130, 246, 0.1);
 
     /* Text Hierarchy */
-    --text-primary: #ffffff;
-    --text-secondary: #a1a1aa;
-    --text-muted: #71717a;
-    --text-faint: #3f3f46;
+    --text-primary: #1d1d1f;
+    --text-secondary: #6e6e73;
+    --text-muted: #86868b;
+    --text-faint: #aeaeb2;
     --text-accent: var(--accent);
+    --text-ink: var(--text-primary);
+    --text-subtle: var(--text-secondary);
 
     /* Borders & Depth */
-    --border: rgba(255, 255, 255, 0.06);
-    --border-strong: rgba(255, 255, 255, 0.12);
-    --border-accent: rgba(0, 242, 255, 0.3);
+    --border: rgba(0, 0, 0, 0.1);
+    --border-strong: rgba(0, 0, 0, 0.15);
+    --border-accent: rgba(59, 130, 246, 0.3);
 
     /* Semantic */
     --success: #10b981;
     --success-soft: rgba(16, 185, 129, 0.1);
+    --success-contrast: #ffffff;
     --warning: #f59e0b;
     --warning-soft: rgba(245, 158, 11, 0.1);
     --danger: #ef4444;
@@ -51,21 +54,75 @@
     --info-soft: rgba(59, 130, 246, 0.1);
 
     /* Shadow & Glass */
-    --glass-blur: blur(16px);
-    --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
-    --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    --glass-blur: blur(20px);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.12);
+    --shadow-xl: 0 4px 16px rgba(0, 0, 0, 0.16);
     --shadow-glow: 0 0 20px var(--accent-glow);
 
     /* Radius */
     --radius-sm: 8px;
-    --radius-md: 12px;
+    --radius-md: 10px;
     --radius-lg: 16px;
-    --radius-xl: 24px;
-    --radius-full: 9999px;
+    --radius-xl: 20px;
+    --radius-full: 999px;
 
     /* Transitions */
-    --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Dark mode overrides (synced with design-system.css) */
+[data-theme="dark"] {
+    color-scheme: dark;
+
+    --bg-base: #000000;
+    --bg-surface: rgba(28, 28, 30, 0.7);
+    --bg-surface-elevated: rgba(44, 44, 46, 0.8);
+    --bg-surface-2: #1c1c1e;
+    --bg-surface-3: #2c2c2e;
+    --bg-muted: #1c1c1e;
+    --bg-subtle: #000000;
+
+    /* iOS Dark Blue */
+    --accent: #0a84ff;
+    --accent-strong: #409cff;
+    --accent-glow: rgba(10, 132, 255, 0.3);
+    --accent-soft: rgba(10, 132, 255, 0.15);
+
+    --secondary: #0a84ff;
+    --secondary-strong: #409cff;
+    --secondary-glow: rgba(10, 132, 255, 0.3);
+    --secondary-soft: rgba(10, 132, 255, 0.15);
+
+    --tertiary: #0a84ff;
+    --tertiary-soft: rgba(10, 132, 255, 0.15);
+
+    /* Text for dark mode */
+    --text-primary: #f5f5f7;
+    --text-secondary: #aeaeb2;
+    --text-muted: #8e8e93;
+    --text-faint: #636366;
+    --text-ink: var(--text-primary);
+    --text-subtle: var(--text-secondary);
+
+    /* Borders for dark */
+    --border: rgba(255, 255, 255, 0.1);
+    --border-strong: rgba(255, 255, 255, 0.15);
+
+    /* Semantic dark variants */
+    --success: #30d158;
+    --success-soft: rgba(48, 209, 88, 0.15);
+    --warning: #ff9f0a;
+    --warning-soft: rgba(255, 159, 10, 0.15);
+    --danger: #ff453a;
+    --danger-soft: rgba(255, 69, 58, 0.15);
+    --info: #0a84ff;
+    --info-soft: rgba(10, 132, 255, 0.15);
+
+    /* Shadows for dark */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.4);
+    --shadow-xl: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
 
 /* .dark variables are already optimized for dark-first */
