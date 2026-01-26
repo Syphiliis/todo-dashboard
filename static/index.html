@@ -10,10 +10,34 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
+    <!-- Inline theme initialization to prevent flash -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+            if (theme === 'dark') document.documentElement.classList.add('dark');
+        })();
+    </script>
+
+    <!-- iOS-like Design System FIRST -->
+    <link href="/styles/design-system.css" rel="stylesheet" />
+    <link href="/theme.css" rel="stylesheet" />
+    <link href="/styles/components.css" rel="stylesheet" />
+    <link href="/styles/utilities.css" rel="stylesheet" />
+    <link href="/styles/animations.css" rel="stylesheet" />
+
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Tailwind LAST with DISABLED preflight to not reset our styles -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
     <script>
         tailwind.config = {
+            corePlugins: {
+                preflight: false,  // CRITICAL: Disable Tailwind CSS reset!
+            },
             darkMode: ['class', '[data-theme="dark"]'],
             theme: {
                 extend: {
@@ -36,23 +60,6 @@
             }
         }
     </script>
-    <!-- Inline theme initialization to prevent flash -->
-    <script>
-        (function() {
-            const savedTheme = localStorage.getItem('theme');
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const theme = savedTheme || (prefersDark ? 'dark' : 'light');
-            document.documentElement.setAttribute('data-theme', theme);
-            if (theme === 'dark') document.documentElement.classList.add('dark');
-        })();
-    </script>
-    <!-- Legacy theme first, then design system to override -->
-    <link href="/theme.css" rel="stylesheet" />
-    <!-- iOS-like Design System -->
-    <link href="/styles/design-system.css" rel="stylesheet" />
-    <link href="/styles/components.css" rel="stylesheet" />
-    <link href="/styles/utilities.css" rel="stylesheet" />
-    <link href="/styles/animations.css" rel="stylesheet" />
 </head>
 
 <body class="font-sans min-h-screen relative overflow-x-hidden" style="background-color: var(--bg-base); color: var(--text-primary);">

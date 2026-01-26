@@ -10,7 +10,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
     <!-- Inline theme initialization -->
     <script>
         (function() {
@@ -21,8 +20,19 @@
             if (theme === 'dark') document.documentElement.classList.add('dark');
         })();
     </script>
+    <!-- iOS-like Design System FIRST -->
+    <link href="/styles/design-system.css" rel="stylesheet" />
+    <link href="/theme.css" rel="stylesheet" />
+    <link href="/styles/components.css" rel="stylesheet" />
+    <link href="/styles/utilities.css" rel="stylesheet" />
+    <link href="/styles/animations.css" rel="stylesheet" />
+    <!-- Tailwind LAST with disabled preflight -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
     <script>
         tailwind.config = {
+            corePlugins: {
+                preflight: false,
+            },
             darkMode: ['class', '[data-theme="dark"]'],
             theme: {
                 extend: {
@@ -45,13 +55,6 @@
             }
         }
     </script>
-    <!-- Legacy theme first, then design system -->
-    <link href="/theme.css" rel="stylesheet" />
-    <!-- iOS-like Design System -->
-    <link href="/styles/design-system.css" rel="stylesheet" />
-    <link href="/styles/components.css" rel="stylesheet" />
-    <link href="/styles/utilities.css" rel="stylesheet" />
-    <link href="/styles/animations.css" rel="stylesheet" />
 </head>
 
 <body class="font-sans min-h-screen relative overflow-x-hidden" style="background-color: var(--bg-base); color: var(--text-primary);">
