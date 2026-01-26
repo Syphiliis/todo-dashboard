@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html class="dark" lang="fr">
+<html lang="fr">
 
 <head>
     <meta charset="utf-8" />
@@ -36,12 +36,23 @@
             }
         }
     </script>
+    <!-- Inline theme initialization to prevent flash -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+            if (theme === 'dark') document.documentElement.classList.add('dark');
+        })();
+    </script>
+    <!-- Legacy theme first, then design system to override -->
+    <link href="/theme.css" rel="stylesheet" />
     <!-- iOS-like Design System -->
     <link href="/styles/design-system.css" rel="stylesheet" />
     <link href="/styles/components.css" rel="stylesheet" />
     <link href="/styles/utilities.css" rel="stylesheet" />
     <link href="/styles/animations.css" rel="stylesheet" />
-    <link href="/theme.css" rel="stylesheet" />
 </head>
 
 <body class="font-sans min-h-screen relative overflow-x-hidden" style="background-color: var(--bg-base); color: var(--text-primary);">

@@ -286,9 +286,33 @@ textarea:focus-visible,
 .glass-panel {
     background: var(--bg-surface);
     border: 1px solid var(--border);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-sm);
-    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Section tâches - meilleur contraste */
+#section-tasks {
+    background: var(--bg-surface) !important;
+}
+
+#section-tasks h2,
+#section-tasks .text-ink {
+    color: var(--text-primary) !important;
+}
+
+#section-tasks .text-subtle {
+    color: var(--text-secondary) !important;
+}
+
+#section-tasks .filter-tab {
+    color: var(--text-secondary);
+    background: transparent;
+}
+
+#section-tasks .filter-tab.active {
+    background: var(--primary);
+    color: white;
 }
 
 .japanese-border-bottom {
@@ -461,17 +485,26 @@ button:disabled,
     width: 100%;
     padding: 0.875rem 1.25rem;
     border-radius: var(--radius-md);
-    border: 1px solid var(--border-strong);
-    background: var(--bg-muted);
+    border: 1px solid var(--border);
+    background: var(--bg-surface);
     color: var(--text-primary);
     font-size: 0.9rem;
-    transition: var(--transition);
+    transition: all 0.2s ease;
+}
+
+.field::placeholder {
+    color: var(--text-muted);
 }
 
 .field:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 4px var(--accent-soft);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
     outline: none;
+    background: var(--bg-elevated);
+}
+
+[data-theme="dark"] .field:focus {
+    box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.2);
 }
 
 .category-item {
