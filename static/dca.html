@@ -7,8 +7,7 @@
     <title>Alex Todo Dashboard · DCA</title>
     <link href="https://fonts.googleapis.com" rel="preconnect" />
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
-    <link
-        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
@@ -46,18 +45,15 @@
             <form id="dcaForm" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="md:col-span-2">
                     <label class="label" for="tickers">Tickers</label>
-                    <input id="tickers" type="text" value="UST.PA, AAPL"
-                        class="field" />
+                    <input id="tickers" type="text" value="UST.PA, AAPL" class="field" />
                     <p class="helper-text mt-1">Sépare les tickers par des virgules.</p>
                 </div>
                 <div>
                     <label class="label" for="month">Mois</label>
-                    <select id="month"
-                        class="field"></select>
+                    <select id="month" class="field"></select>
                 </div>
                 <div class="md:col-span-3 flex flex-wrap items-center gap-3">
-                    <button type="submit"
-                        class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary">
                         Analyser
                     </button>
                     <span id="loading" class="text-xs text-faint hidden">Analyse en cours...</span>

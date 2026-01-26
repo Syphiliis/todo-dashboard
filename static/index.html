@@ -7,8 +7,7 @@
     <title>Zen Task Dashboard</title>
     <link href="https://fonts.googleapis.com" rel="preconnect" />
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
-    <link
-        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -16,8 +15,7 @@
     <link href="/theme.css" rel="stylesheet" />
 </head>
 
-<body
-    class="bg-base text-ink font-sans min-h-screen transition-colors duration-300 relative overflow-x-hidden">
+<body class="bg-base text-ink font-sans min-h-screen transition-colors duration-300 relative overflow-x-hidden">
     <div class="bg-washi fixed top-0 left-0 w-full h-full pointer-events-none z-0"></div>
     <div class="orb orb-accent fixed -top-32 -right-32 w-96 h-96 rounded-full z-0"></div>
     <div class="orb orb-warm fixed top-1/2 -left-32 w-80 h-80 rounded-full z-0"></div>
@@ -28,30 +26,24 @@
             <div>
                 <div class="flex items-center gap-3">
                     <span class="text-3xl">🌙</span>
-                    <h1
-                        class="text-3xl md:text-4xl font-display font-medium tracking-wide text-ink">
+                    <h1 class="text-3xl md:text-4xl font-display font-medium tracking-wide text-ink">
                         Alex <span class="text-accent font-semibold">Todo</span> Dashboard
                     </h1>
                 </div>
                 <p class="text-xs text-muted mt-1 ml-1 font-display tracking-widest uppercase" id="currentDate"></p>
             </div>
             <div class="flex items-center gap-3">
-                <button type="button"
-                    class="btn btn-secondary btn-sm"
-                    onclick="sendDailySummary()">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="sendDailySummary()">
                     <span class="material-icons-round text-base text-info">bar_chart</span>
                     Résumé Telegram
                 </button>
-                <button type="button"
-                    class="btn btn-primary"
-                    onclick="openModal()">
+                <button type="button" class="btn btn-primary" onclick="openModal()">
                     <span class="material-icons-round text-base">add</span>
                     Nouvelle tâche
                 </button>
             </div>
         </header>
-        <nav class="flex flex-wrap gap-3 items-center reveal" style="--delay: 0.1s;"
-            aria-label="Navigation principale">
+        <nav class="flex flex-wrap gap-3 items-center reveal" style="--delay: 0.1s;" aria-label="Navigation principale">
             <a class="nav-link active" href="/">Dashboard</a>
             <a class="nav-link" href="/projects">Projets</a>
             <a class="nav-link" href="/dca">DCA</a>
@@ -64,7 +56,8 @@
                 <h3 class="text-xs font-bold tracking-widest text-muted uppercase mb-2">Total Tâches</h3>
                 <div class="flex items-end justify-between">
                     <span class="text-4xl font-display font-light text-ink" id="statTotal">0</span>
-                    <span class="material-icons-round text-accent text-4xl opacity-30 group-hover:opacity-60 transition-opacity">list_alt</span>
+                    <span
+                        class="material-icons-round text-accent text-4xl opacity-30 group-hover:opacity-60 transition-opacity">list_alt</span>
                 </div>
             </div>
             <div
@@ -72,7 +65,8 @@
                 <h3 class="text-xs font-bold tracking-widest text-muted uppercase mb-2">En Attente</h3>
                 <div class="flex items-end justify-between">
                     <span class="text-4xl font-display font-light text-warning" id="statPending">0</span>
-                    <span class="material-icons-round text-warning text-4xl opacity-30 group-hover:opacity-60 transition-opacity">hourglass_empty</span>
+                    <span
+                        class="material-icons-round text-warning text-4xl opacity-30 group-hover:opacity-60 transition-opacity">hourglass_empty</span>
                 </div>
             </div>
             <div
@@ -80,7 +74,8 @@
                 <h3 class="text-xs font-bold tracking-widest text-muted uppercase mb-2">Complétées</h3>
                 <div class="flex items-end justify-between">
                     <span class="text-4xl font-display font-light text-success" id="statCompleted">0</span>
-                    <span class="material-icons-round text-success text-4xl opacity-30 group-hover:opacity-60 transition-opacity">check_circle</span>
+                    <span
+                        class="material-icons-round text-success text-4xl opacity-30 group-hover:opacity-60 transition-opacity">check_circle</span>
                 </div>
             </div>
             <div
@@ -88,7 +83,8 @@
                 <h3 class="text-xs font-bold tracking-widest text-muted uppercase mb-2">En Retard</h3>
                 <div class="flex items-end justify-between">
                     <span class="text-4xl font-display font-light text-danger" id="statOverdue">0</span>
-                    <span class="material-icons-round text-danger text-4xl opacity-30 group-hover:opacity-60 transition-opacity">warning</span>
+                    <span
+                        class="material-icons-round text-danger text-4xl opacity-30 group-hover:opacity-60 transition-opacity">warning</span>
                 </div>
             </div>
             <div
@@ -97,7 +93,8 @@
                     Aujourd'hui</h3>
                 <div class="flex items-end justify-between">
                     <span class="text-4xl font-display font-light text-ink" id="statToday">0</span>
-                    <span class="material-icons-round text-info text-4xl opacity-30 group-hover:opacity-60 transition-opacity">today</span>
+                    <span
+                        class="material-icons-round text-info text-4xl opacity-30 group-hover:opacity-60 transition-opacity">today</span>
                 </div>
             </div>
         </div>
@@ -113,7 +110,8 @@
 
         <!-- Citation & Fait du jour -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 reveal" style="--delay: 0.25s;" id="section-daily">
-            <div class="glass-panel panel-quote p-5 rounded-xl hover:translate-y-[-2px] transition-transform duration-300">
+            <div
+                class="glass-panel panel-quote p-5 rounded-xl hover:translate-y-[-2px] transition-transform duration-300">
                 <div class="flex items-start justify-between mb-3">
                     <div class="flex items-center gap-2">
                         <span class="text-2xl">💭</span>
@@ -128,7 +126,8 @@
                 </blockquote>
                 <p class="text-xs text-muted font-medium" id="dailyQuoteAuthor">— ...</p>
             </div>
-            <div class="glass-panel panel-fact p-5 rounded-xl hover:translate-y-[-2px] transition-transform duration-300">
+            <div
+                class="glass-panel panel-fact p-5 rounded-xl hover:translate-y-[-2px] transition-transform duration-300">
                 <div class="flex items-center gap-2 mb-3">
                     <span class="text-2xl">💡</span>
                     <h3 class="text-xs font-bold tracking-widest text-subtle uppercase">Le saviez-vous ?</h3>
@@ -154,8 +153,7 @@
                             class="roadmap-tab px-4 py-1.5 rounded-md text-xs font-medium transition-all"
                             data-type="long_term">Long-terme (6+ mois)</button>
                     </div>
-                    <button type="button"
-                        class="btn btn-primary btn-sm" onclick="openRoadmapModal()">
+                    <button type="button" class="btn btn-primary btn-sm" onclick="openRoadmapModal()">
                         <span class="material-icons-round text-base">add</span>
                         Objectif
                     </button>
@@ -172,8 +170,7 @@
         <!-- Analytics & Habits Row -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 reveal" style="--delay: 0.35s;" id="section-analytics">
             <!-- Graphique Productivité -->
-            <div
-                class="glass-panel rounded-xl p-6">
+            <div class="glass-panel rounded-xl p-6">
                 <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center gap-2">
                         <span class="text-2xl">📊</span>
@@ -193,15 +190,13 @@
             </div>
 
             <!-- Habitudes Tracker -->
-            <div
-                class="glass-panel rounded-xl p-6">
+            <div class="glass-panel rounded-xl p-6">
                 <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center gap-2">
                         <span class="text-2xl">✅</span>
                         <h3 class="text-sm font-bold tracking-widest text-subtle uppercase">Habitudes</h3>
                     </div>
-                    <button type="button" onclick="openHabitModal()"
-                        class="btn btn-soft btn-sm">
+                    <button type="button" onclick="openHabitModal()" class="btn btn-soft btn-sm">
                         <span class="material-icons-round text-sm">add</span>
                         Ajouter
                     </button>
@@ -218,8 +213,7 @@
         <!-- Vue Ma Journée & Mini Calendrier -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 reveal" style="--delay: 0.4s;" id="section-today">
             <!-- Ma Journée -->
-            <div
-                class="lg:col-span-2 glass-panel rounded-xl p-6">
+            <div class="lg:col-span-2 glass-panel rounded-xl p-6">
                 <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center gap-2">
                         <span class="text-2xl">☀️</span>
@@ -236,23 +230,20 @@
             </div>
 
             <!-- Mini Calendrier -->
-            <div
-                class="glass-panel rounded-xl p-6">
+            <div class="glass-panel rounded-xl p-6">
                 <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center gap-2">
                         <span class="text-2xl">🗓️</span>
                         <h3 class="text-sm font-bold tracking-widest text-subtle uppercase">Calendrier</h3>
                     </div>
                     <div class="flex items-center gap-1">
-                        <button type="button" onclick="changeMonth(-1)"
-                            class="action-btn">
+                        <button type="button" onclick="changeMonth(-1)" class="action-btn">
                             <span class="material-icons-round text-sm">chevron_left</span>
                         </button>
                         <span id="calendarMonthLabel"
                             class="text-xs font-medium text-subtle min-w-[80px] text-center">Jan
                             2026</span>
-                        <button type="button" onclick="changeMonth(1)"
-                            class="action-btn">
+                        <button type="button" onclick="changeMonth(1)" class="action-btn">
                             <span class="material-icons-round text-sm">chevron_right</span>
                         </button>
                     </div>
@@ -271,8 +262,7 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-[500px] reveal" style="--delay: 0.45s;">
-            <aside
-                class="glass-panel rounded-xl p-4 lg:col-span-1 h-full">
+            <aside class="glass-panel rounded-xl p-4 lg:col-span-1 h-full">
                 <h2 class="text-xs font-bold tracking-widest text-muted uppercase mb-4 px-2">
                     Catégories</h2>
                 <nav class="space-y-1">
@@ -283,19 +273,18 @@
                             <span class="text-lg opacity-80 group-hover:scale-110 transition-transform">⛩️</span>
                             <span class="font-medium text-sm">Toutes</span>
                         </div>
-                        <span
-                            class="text-xs font-bold bg-surface-2 px-2 py-0.5 rounded-full text-muted"
+                        <span class="text-xs font-bold bg-surface-2 px-2 py-0.5 rounded-full text-muted"
                             id="countAll">0</span>
                     </button>
                     <button type="button"
                         class="category-item flex items-center justify-between px-3 py-3 rounded-lg text-subtle border-l-4 border-transparent transition-all group"
                         data-category="easynode">
                         <div class="flex items-center gap-3">
-                            <span class="material-icons-round text-info text-lg group-hover:scale-110 transition-transform">rocket_launch</span>
+                            <span
+                                class="material-icons-round text-info text-lg group-hover:scale-110 transition-transform">rocket_launch</span>
                             <span class="font-medium text-sm">EasyNode</span>
                         </div>
-                        <span
-                            class="text-xs font-bold bg-surface-2 px-2 py-0.5 rounded-full text-muted"
+                        <span class="text-xs font-bold bg-surface-2 px-2 py-0.5 rounded-full text-muted"
                             id="countEasynode">0</span>
                     </button>
                     <button type="button"
@@ -305,8 +294,7 @@
                             <span class="text-lg group-hover:scale-110 transition-transform">🏯</span>
                             <span class="font-medium text-sm">Immobilier</span>
                         </div>
-                        <span
-                            class="text-xs font-bold bg-surface-2 px-2 py-0.5 rounded-full text-muted"
+                        <span class="text-xs font-bold bg-surface-2 px-2 py-0.5 rounded-full text-muted"
                             id="countImmobilier">0</span>
                     </button>
                     <button type="button"
@@ -317,8 +305,7 @@
                                 class="material-icons-round text-accent text-lg group-hover:scale-110 transition-transform">smartphone</span>
                             <span class="font-medium text-sm">Content</span>
                         </div>
-                        <span
-                            class="text-xs font-bold bg-surface-2 px-2 py-0.5 rounded-full text-muted"
+                        <span class="text-xs font-bold bg-surface-2 px-2 py-0.5 rounded-full text-muted"
                             id="countContent">0</span>
                     </button>
                     <button type="button"
@@ -328,19 +315,18 @@
                             <span class="text-lg group-hover:scale-110 transition-transform">🎋</span>
                             <span class="font-medium text-sm">Personnel</span>
                         </div>
-                        <span
-                            class="text-xs font-bold bg-surface-2 px-2 py-0.5 rounded-full text-muted"
+                        <span class="text-xs font-bold bg-surface-2 px-2 py-0.5 rounded-full text-muted"
                             id="countPersonnel">0</span>
                     </button>
                     <button type="button"
                         class="category-item flex items-center justify-between px-3 py-3 rounded-lg text-subtle border-l-4 border-transparent transition-all group"
                         data-category="admin">
                         <div class="flex items-center gap-3">
-                            <span class="material-icons-round text-muted text-lg group-hover:scale-110 transition-transform">description</span>
+                            <span
+                                class="material-icons-round text-muted text-lg group-hover:scale-110 transition-transform">description</span>
                             <span class="font-medium text-sm">Admin</span>
                         </div>
-                        <span
-                            class="text-xs font-bold bg-surface-2 px-2 py-0.5 rounded-full text-muted"
+                        <span class="text-xs font-bold bg-surface-2 px-2 py-0.5 rounded-full text-muted"
                             id="countAdmin">0</span>
                     </button>
                 </nav>
@@ -384,14 +370,11 @@
                 <div class="p-6 flex-grow relative z-10">
                     <div class="flex gap-2 mb-10" id="section-add">
                         <div class="relative flex-grow">
-                            <input
-                                class="field field-compact"
+                            <input class="field field-compact"
                                 placeholder="Ajouter rapidement une tâche... (Entrée pour valider)" type="text"
                                 id="quickAddInput" />
                         </div>
-                        <button type="button"
-                            class="btn btn-primary btn-icon"
-                            onclick="quickAdd()">
+                        <button type="button" class="btn btn-primary btn-icon" onclick="quickAdd()">
                             <span class="material-icons-round">add</span>
                         </button>
                     </div>
@@ -457,11 +440,8 @@
                     <input class="field" type="datetime-local" id="todoDeadline" />
                 </div>
                 <div class="modal-actions">
-                    <button type="button"
-                        class="btn btn-secondary"
-                        onclick="closeModal()">Annuler</button>
-                    <button type="submit"
-                        class="btn btn-primary">Enregistrer</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
                 </div>
             </form>
         </div>
@@ -505,11 +485,8 @@
                     <input class="field" type="date" id="roadmapTargetDate" />
                 </div>
                 <div class="modal-actions">
-                    <button type="button"
-                        class="btn btn-secondary"
-                        onclick="closeRoadmapModal()">Annuler</button>
-                    <button type="submit"
-                        class="btn btn-primary">Enregistrer</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeRoadmapModal()">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
                 </div>
             </form>
         </div>
@@ -522,8 +499,7 @@
             <form id="habitForm">
                 <div class="form-group">
                     <label class="label" for="habitName">Nom de l'habitude</label>
-                    <input class="field" type="text" id="habitName" required
-                        placeholder="Ex: Méditation 10 min" />
+                    <input class="field" type="text" id="habitName" required placeholder="Ex: Méditation 10 min" />
                 </div>
                 <div class="form-row">
                     <div class="form-group">
@@ -553,11 +529,8 @@
                     </div>
                 </div>
                 <div class="modal-actions">
-                    <button type="button"
-                        class="btn btn-secondary"
-                        onclick="closeHabitModal()">Annuler</button>
-                    <button type="submit"
-                        class="btn btn-success">Créer</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeHabitModal()">Annuler</button>
+                    <button type="submit" class="btn btn-success">Créer</button>
                 </div>
             </form>
         </div>

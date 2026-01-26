@@ -7,8 +7,7 @@
     <title>Alex Todo Dashboard · Projets</title>
     <link href="https://fonts.googleapis.com" rel="preconnect" />
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
-    <link
-        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
@@ -48,8 +47,7 @@
                 <input type="hidden" id="projectId" />
                 <div class="md:col-span-2">
                     <label class="label" for="projectName">Titre</label>
-                    <input id="projectName" type="text" required placeholder="Ex: EasyNode Cluster V2"
-                        class="field" />
+                    <input id="projectName" type="text" required placeholder="Ex: EasyNode Cluster V2" class="field" />
                 </div>
                 <div class="md:col-span-2">
                     <label class="label" for="projectDescription">Description</label>
@@ -58,13 +56,11 @@
                 </div>
                 <div>
                     <label class="label" for="projectGithub">Lien GitHub</label>
-                    <input id="projectGithub" type="url" placeholder="https://github.com/user/repo"
-                        class="field" />
+                    <input id="projectGithub" type="url" placeholder="https://github.com/user/repo" class="field" />
                 </div>
                 <div>
                     <label class="label" for="projectStatus">Statut</label>
-                    <select id="projectStatus"
-                        class="field">
+                    <select id="projectStatus" class="field">
                         <option value="active">Actif</option>
                         <option value="paused">En pause</option>
                         <option value="completed">Terminé</option>
@@ -76,12 +72,10 @@
                         class="field"></textarea>
                 </div>
                 <div class="md:col-span-2 flex flex-wrap gap-3">
-                    <button type="submit"
-                        class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary">
                         Enregistrer
                     </button>
-                    <button type="button" onclick="resetForm()"
-                        class="btn btn-secondary">
+                    <button type="button" onclick="resetForm()" class="btn btn-secondary">
                         Réinitialiser
                     </button>
                 </div>
