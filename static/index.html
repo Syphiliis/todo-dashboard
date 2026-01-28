@@ -12,7 +12,7 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
     <!-- Inline theme initialization to prevent flash -->
     <script>
-        (function() {
+        (function () {
             const savedTheme = localStorage.getItem('theme');
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             const theme = savedTheme || (prefersDark ? 'dark' : 'light');
@@ -21,11 +21,13 @@
         })();
     </script>
 
-    <!-- iOS-like Design System FIRST -->
+    <!-- iOS-like Design System (variables + base) -->
     <link href="/styles/design-system.css" rel="stylesheet" />
-    <link href="/theme.css" rel="stylesheet" />
+    <!-- Components (reusable UI) -->
     <link href="/styles/components.css" rel="stylesheet" />
-    <link href="/styles/utilities.css" rel="stylesheet" />
+    <!-- Theme utilities (extends design system) -->
+    <link href="/theme.css" rel="stylesheet" />
+    <!-- Animations -->
     <link href="/styles/animations.css" rel="stylesheet" />
 
     <!-- Chart.js -->
@@ -62,24 +64,28 @@
     </script>
 </head>
 
-<body class="font-sans min-h-screen relative overflow-x-hidden" style="background-color: var(--bg-base); color: var(--text-primary);">
+<body class="font-sans min-h-screen relative overflow-x-hidden"
+    style="background-color: var(--bg-base); color: var(--text-primary);">
     <!-- Background effects - Subtle blue gradients -->
     <div class="fixed inset-0 z-0 pointer-events-none">
-        <div class="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full opacity-[0.03] blur-[120px]" style="background: var(--primary);"></div>
-        <div class="absolute bottom-[10%] left-[-5%] w-[35%] h-[35%] rounded-full opacity-[0.02] blur-[100px]" style="background: var(--primary);"></div>
+        <div class="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full opacity-[0.03] blur-[120px]"
+            style="background: var(--primary);"></div>
+        <div class="absolute bottom-[10%] left-[-5%] w-[35%] h-[35%] rounded-full opacity-[0.02] blur-[100px]"
+            style="background: var(--primary);"></div>
     </div>
 
     <div class="relative z-10 max-w-7xl mx-auto p-4 md:p-8 space-y-8" id="top">
-        <header
-            class="flex flex-col md:flex-row justify-between items-start md:items-center pb-6 gap-4" style="border-bottom: 1px solid var(--border-subtle);">
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center pb-6 gap-4"
+            style="border-bottom: 1px solid var(--border-subtle);">
             <div>
                 <div class="flex items-center gap-3">
-                    <div
-                        class="w-11 h-11 rounded-xl flex items-center justify-center text-xl" style="background: var(--gradient-primary);">
+                    <div class="w-11 h-11 rounded-xl flex items-center justify-center text-xl"
+                        style="background: var(--gradient-primary);">
                         ⚡
                     </div>
                     <div>
-                        <h1 class="text-2xl md:text-3xl font-semibold tracking-tight" style="color: var(--text-primary);">
+                        <h1 class="text-2xl md:text-3xl font-semibold tracking-tight"
+                            style="color: var(--text-primary);">
                             Alex <span style="color: var(--primary);">Dashboard</span>
                         </h1>
                         <p class="text-sm mt-0.5" id="currentDate" style="color: var(--text-muted);">Chargement...</p>
@@ -88,7 +94,8 @@
             </div>
             <div class="flex items-center gap-3">
                 <!-- Theme Toggle -->
-                <button type="button" id="themeToggle" class="btn btn-icon" aria-label="Changer le thème" title="Changer le thème">
+                <button type="button" id="themeToggle" class="btn btn-icon" aria-label="Changer le thème"
+                    title="Changer le thème">
                     <span class="material-icons-round theme-icon" data-theme-icon="light">dark_mode</span>
                     <span class="material-icons-round theme-icon" data-theme-icon="dark">light_mode</span>
                 </button>
@@ -103,7 +110,8 @@
                 </button>
             </div>
         </header>
-        <nav class="flex flex-wrap gap-3 items-center reveal" style="--delay: 0.1s;" aria-label="Navigation principale" role="navigation">
+        <nav class="flex flex-wrap gap-3 items-center reveal" style="--delay: 0.1s;" aria-label="Navigation principale"
+            role="navigation">
             <a class="nav-link active" href="/" aria-current="page">Dashboard</a>
             <a class="nav-link" href="/projects">Projets</a>
             <a class="nav-link" href="/dca">DCA</a>
@@ -113,11 +121,13 @@
             id="section-stats">
             <div
                 class="glass-panel p-5 rounded-xl flex flex-col justify-between hover:translate-y-[-2px] transition-transform duration-300 group cursor-default">
-                <h3 class="text-xs font-bold tracking-widest uppercase mb-2" style="color: var(--text-muted);">Total Tâches</h3>
+                <h3 class="text-xs font-bold tracking-widest uppercase mb-2" style="color: var(--text-muted);">Total
+                    Tâches</h3>
                 <div class="flex items-end justify-between">
-                    <span class="text-4xl font-display font-light" id="statTotal" style="color: var(--text-primary);">0</span>
-                    <span
-                        class="material-icons-round text-4xl opacity-30 group-hover:opacity-60 transition-opacity" style="color: var(--primary);">list_alt</span>
+                    <span class="text-4xl font-display font-light" id="statTotal"
+                        style="color: var(--text-primary);">0</span>
+                    <span class="material-icons-round text-4xl opacity-30 group-hover:opacity-60 transition-opacity"
+                        style="color: var(--primary);">list_alt</span>
                 </div>
             </div>
             <div
@@ -461,7 +471,8 @@
                 <input type="hidden" id="todoId" />
                 <div class="form-group">
                     <label class="label" for="todoTitle">Titre</label>
-                    <input class="field" type="text" id="todoTitle" required aria-required="true" placeholder="Ex: Finir le script LLM" />
+                    <input class="field" type="text" id="todoTitle" required aria-required="true"
+                        placeholder="Ex: Finir le script LLM" />
                 </div>
                 <div class="form-group">
                     <label class="label" for="todoDescription">Description (optionnel)</label>

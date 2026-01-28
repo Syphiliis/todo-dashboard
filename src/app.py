@@ -217,6 +217,34 @@ def authenticate():
     return jsonify({'success': False}), 401
 
 
+# ============== Static Files Routes ==============
+# These routes serve CSS/JS/images without the /static/ prefix
+# for compatibility with the HTML imports
+
+@app.route('/styles/<path:filename>')
+def serve_styles(filename):
+    """Serve CSS files from /styles/ path."""
+    return send_from_directory(f'{app.static_folder}/styles', filename)
+
+
+@app.route('/js/<path:filename>')
+def serve_js(filename):
+    """Serve JS files from /js/ path."""
+    return send_from_directory(f'{app.static_folder}/js', filename)
+
+
+@app.route('/theme.css')
+def serve_theme_css():
+    """Serve theme.css from root path."""
+    return send_from_directory(app.static_folder, 'theme.css')
+
+
+@app.route('/images/<path:filename>')
+def serve_images(filename):
+    """Serve image files from /images/ path."""
+    return send_from_directory(f'{app.static_folder}/images', filename)
+
+
 @app.route('/')
 def index():
     """Serve the dashboard."""

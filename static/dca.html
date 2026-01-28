@@ -12,7 +12,7 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
     <!-- Inline theme initialization -->
     <script>
-        (function() {
+        (function () {
             const savedTheme = localStorage.getItem('theme');
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             const theme = savedTheme || (prefersDark ? 'dark' : 'light');
@@ -20,11 +20,13 @@
             if (theme === 'dark') document.documentElement.classList.add('dark');
         })();
     </script>
-    <!-- iOS-like Design System FIRST -->
+    <!-- iOS-like Design System (variables + base) -->
     <link href="/styles/design-system.css" rel="stylesheet" />
-    <link href="/theme.css" rel="stylesheet" />
+    <!-- Components (reusable UI) -->
     <link href="/styles/components.css" rel="stylesheet" />
-    <link href="/styles/utilities.css" rel="stylesheet" />
+    <!-- Theme utilities (extends design system) -->
+    <link href="/theme.css" rel="stylesheet" />
+    <!-- Animations -->
     <link href="/styles/animations.css" rel="stylesheet" />
     <!-- Tailwind LAST with disabled preflight -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
@@ -57,34 +59,39 @@
     </script>
 </head>
 
-<body class="font-sans min-h-screen relative overflow-x-hidden" style="background-color: var(--bg-base); color: var(--text-primary);">
+<body class="font-sans min-h-screen relative overflow-x-hidden"
+    style="background-color: var(--bg-base); color: var(--text-primary);">
     <!-- Background effects - Subtle blue gradients -->
     <div class="fixed inset-0 z-0 pointer-events-none">
-        <div class="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full opacity-[0.03] blur-[120px]" style="background: var(--primary);"></div>
-        <div class="absolute bottom-[10%] left-[-5%] w-[35%] h-[35%] rounded-full opacity-[0.02] blur-[100px]" style="background: var(--primary);"></div>
+        <div class="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full opacity-[0.03] blur-[120px]"
+            style="background: var(--primary);"></div>
+        <div class="absolute bottom-[10%] left-[-5%] w-[35%] h-[35%] rounded-full opacity-[0.02] blur-[100px]"
+            style="background: var(--primary);"></div>
     </div>
 
     <div class="relative z-10 max-w-6xl mx-auto p-6 space-y-10">
-        <header
-            class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-8" style="border-bottom: 1px solid var(--border-subtle);">
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-8"
+            style="border-bottom: 1px solid var(--border-subtle);">
             <div>
                 <div class="flex items-center gap-4">
-                    <div
-                        class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl" style="background: var(--gradient-primary);">
+                    <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
+                        style="background: var(--gradient-primary);">
                         📈
                     </div>
                     <div>
-                        <h1
-                            class="text-3xl md:text-4xl font-display font-bold tracking-tight" style="color: var(--primary);">
+                        <h1 class="text-3xl md:text-4xl font-display font-bold tracking-tight"
+                            style="color: var(--primary);">
                             Analyse DCA
                         </h1>
-                        <p class="text-sm mt-1 font-medium" style="color: var(--text-muted);">Optimise tes investissements mensuels</p>
+                        <p class="text-sm mt-1 font-medium" style="color: var(--text-muted);">Optimise tes
+                            investissements mensuels</p>
                     </div>
                 </div>
             </div>
             <div class="flex items-center gap-3">
                 <!-- Theme Toggle -->
-                <button type="button" id="themeToggle" class="btn btn-icon" aria-label="Changer le thème" title="Changer le thème">
+                <button type="button" id="themeToggle" class="btn btn-icon" aria-label="Changer le thème"
+                    title="Changer le thème">
                     <span class="material-icons-round theme-icon" data-theme-icon="light">dark_mode</span>
                     <span class="material-icons-round theme-icon" data-theme-icon="dark">light_mode</span>
                 </button>

@@ -89,6 +89,10 @@
   --duration-normal: 200ms;
   --duration-slow: 300ms;
   --ease-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Extended variables for compatibility */
+  --bg-elevated: #fafafa;
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.16);
 }
 
 /* ===================================
@@ -168,7 +172,7 @@ body {
   color: var(--text-primary);
   background-color: var(--bg-base);
   transition: background-color var(--duration-normal) var(--ease-out),
-              color var(--duration-normal) var(--ease-out);
+    color var(--duration-normal) var(--ease-out);
 }
 
 /* Selection */
@@ -230,7 +234,7 @@ body {
 }
 
 /* Fallback for browsers without backdrop-filter */
-@supports not (backdrop-filter: blur(20px)) and not (-webkit-backdrop-filter: blur(20px)) {
+@supports not ((backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px))) {
   .glass-panel {
     background-color: var(--bg-surface) !important;
   }
@@ -240,6 +244,7 @@ body {
    Reduced Motion Support
    =================================== */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -253,45 +258,52 @@ body {
 /* ===================================
    Typography Scale
    =================================== */
-h1, .text-h1 {
+h1,
+.text-h1 {
   font-size: 36px;
   font-weight: var(--font-weight-bold);
   line-height: var(--leading-tight);
   letter-spacing: -0.02em;
 }
 
-h2, .text-h2 {
+h2,
+.text-h2 {
   font-size: 30px;
   font-weight: var(--font-weight-semibold);
   line-height: var(--leading-tight);
   letter-spacing: -0.01em;
 }
 
-h3, .text-h3 {
+h3,
+.text-h3 {
   font-size: 24px;
   font-weight: var(--font-weight-semibold);
   line-height: var(--leading-tight);
 }
 
-h4, .text-h4 {
+h4,
+.text-h4 {
   font-size: 20px;
   font-weight: var(--font-weight-medium);
   line-height: var(--leading-tight);
 }
 
-h5, .text-h5 {
+h5,
+.text-h5 {
   font-size: 18px;
   font-weight: var(--font-weight-medium);
   line-height: var(--leading-normal);
 }
 
-h6, .text-h6 {
+h6,
+.text-h6 {
   font-size: 16px;
   font-weight: var(--font-weight-medium);
   line-height: var(--leading-normal);
 }
 
-p, .text-body {
+p,
+.text-body {
   font-size: 16px;
   line-height: var(--leading-normal);
 }
