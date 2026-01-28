@@ -59,7 +59,7 @@
     </script>
 </head>
 
-<body class="font-sans min-h-screen relative overflow-x-hidden"
+<body class="font-sans min-h-screen relative overflow-hidden"
     style="background-color: var(--bg-base); color: var(--text-primary);">
     <!-- Background effects - Subtle blue gradients -->
     <div class="fixed inset-0 z-0 pointer-events-none">
@@ -69,22 +69,20 @@
             style="background: var(--primary);"></div>
     </div>
 
-    <div class="relative z-10 max-w-6xl mx-auto p-6 space-y-10">
-        <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-8"
-            style="border-bottom: 1px solid var(--border-subtle);">
+    <div class="relative z-10 h-screen flex flex-col">
+        <header
+            class="sticky top-0 z-50 flex flex-col md:flex-row justify-between items-start md:items-center px-6 py-4 flex-shrink-0"
+            style="border-bottom: 1px solid var(--border-subtle); background-color: var(--bg-base); backdrop-filter: blur(20px);">
             <div>
                 <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
                         style="background: var(--gradient-primary);">
                         📈
                     </div>
                     <div>
-                        <h1 class="text-3xl md:text-4xl font-display font-bold tracking-tight"
-                            style="color: var(--primary);">
+                        <h1 class="text-2xl font-display font-bold tracking-tight" style="color: var(--primary);">
                             Analyse DCA
                         </h1>
-                        <p class="text-sm mt-1 font-medium" style="color: var(--text-muted);">Optimise tes
-                            investissements mensuels</p>
                     </div>
                 </div>
             </div>
@@ -104,178 +102,14 @@
             </div>
         </header>
 
-        <section class="glass-panel rounded-xl p-6 reveal" style="--delay: 0.15s;">
-            <form id="dcaForm" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="md:col-span-2">
-                    <label class="label" for="tickers">Tickers</label>
-                    <input id="tickers" type="text" value="UST.PA, AAPL" class="field" />
-                    <p class="helper-text mt-1">Sépare les tickers par des virgules.</p>
-                </div>
-                <div>
-                    <label class="label" for="month">Mois</label>
-                    <select id="month" class="field"></select>
-                </div>
-                <div class="md:col-span-3 flex flex-wrap items-center gap-3">
-                    <button type="submit" class="btn btn-primary">
-                        Analyser
-                    </button>
-                    <span id="loading" class="text-xs text-faint hidden">Analyse en cours...</span>
-                    <span id="error" class="text-xs text-danger"></span>
-                </div>
-            </form>
-        </section>
-
-        <section class="space-y-4 reveal" style="--delay: 0.2s;" id="resultsContainer">
-            <div class="text-center py-12 text-faint">
-                <span class="text-4xl mb-3 block">🔍</span>
-                <p class="text-sm">Lance une analyse pour afficher les résultats.</p>
-            </div>
-        </section>
+        <main class="flex-grow relative w-full">
+            <iframe src="/dca-content" class="w-full h-full border-0" title="Application DCA Next.js"
+                allowtransparency="true"></iframe>
+        </main>
     </div>
 
     <!-- Theme Switcher -->
     <script src="/js/theme-switcher.js"></script>
-
-    <script>
-        const MONTHS = [
-            { value: "janvier", label: "Janvier" },
-            { value: "février", label: "Février" },
-            { value: "mars", label: "Mars" },
-            { value: "avril", label: "Avril" },
-            { value: "mai", label: "Mai" },
-            { value: "juin", label: "Juin" },
-            { value: "juillet", label: "Juillet" },
-            { value: "août", label: "Août" },
-            { value: "septembre", label: "Septembre" },
-            { value: "octobre", label: "Octobre" },
-            { value: "novembre", label: "Novembre" },
-            { value: "décembre", label: "Décembre" }
-        ];
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const monthSelect = document.getElementById('month');
-            MONTHS.forEach(month => {
-                const option = document.createElement('option');
-                option.value = month.value;
-                option.textContent = month.label;
-                monthSelect.appendChild(option);
-            });
-            monthSelect.value = 'novembre';
-
-            document.getElementById('dcaForm').addEventListener('submit', handleAnalyze);
-        });
-
-        async function handleAnalyze(e) {
-            e.preventDefault();
-            const tickers = document.getElementById('tickers').value;
-            const month = document.getElementById('month').value;
-            const loading = document.getElementById('loading');
-            const error = document.getElementById('error');
-            const resultsContainer = document.getElementById('resultsContainer');
-
-            error.textContent = '';
-            loading.classList.remove('hidden');
-            resultsContainer.innerHTML = '';
-
-            try {
-                const response = await fetch('/api/dca/analyze', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ tickers, month })
-                });
-                const data = await response.json();
-                if (!response.ok) {
-                    throw new Error(data.error || 'Erreur API');
-                }
-                renderResults(data);
-            } catch (err) {
-                error.textContent = err.message;
-                resultsContainer.innerHTML = `
-                    <div class="text-center py-12 text-faint">
-                        <span class="text-4xl mb-3 block">⚠️</span>
-                        <p class="text-sm">${err.message}</p>
-                    </div>`;
-            } finally {
-                loading.classList.add('hidden');
-            }
-        }
-
-        function renderResults(data) {
-            const resultsContainer = document.getElementById('resultsContainer');
-            if (!data || !data.results || data.results.length === 0) {
-                resultsContainer.innerHTML = `
-                    <div class="text-center py-12 text-faint">
-                        <span class="text-4xl mb-3 block">📉</span>
-                        <p class="text-sm">Aucun résultat pour ces tickers.</p>
-                    </div>`;
-                return;
-            }
-
-            resultsContainer.innerHTML = data.results.map(item => {
-                const bestDays = item.bestDays?.length
-                    ? `✅ Meilleur moment : ${item.bestDays.map(day => `<strong>${day}</strong>`).join(', ')} du mois`
-                    : '⚠️ Pas assez de données';
-
-                const freqDays = item.freqDays?.sorted?.length
-                    ? `<div class="flex flex-wrap gap-2 mt-2">${item.freqDays.sorted.slice(0, 4).map(day => {
-                        const cls = day.isBest ? 'freq-day best' : 'freq-day';
-                        return `<span class="${cls}">${day.day} (${day.count}x)</span>`;
-                    }).join('')}</div>`
-                    : '';
-
-                const lastYears = (item.perYear || []).slice(0, 3);
-                const hiddenCount = Math.max(0, (item.perYear || []).length - lastYears.length);
-
-                const yearsHtml = lastYears.map(year => {
-                    const lows = (year.lows || []).map(low => {
-                        const price = typeof low.price === 'number' ? low.price.toFixed(2) : low.price;
-                        return `<span class="low-pill">${low.date} → ${price}</span>`;
-                    }).join('');
-                    return `
-                        <div class="flex flex-col gap-2">
-                            <span class="text-xs text-faint">${year.year}</span>
-                            <div class="flex flex-wrap gap-2">${lows}</div>
-                        </div>`;
-                }).join('');
-
-                return `
-                    <div class="result-card card-hover">
-                        <div class="flex flex-col gap-2">
-                            <h2 class="text-lg font-semibold text-ink">Analyse DCA · ${data.month} · <span class="text-accent">${item.ticker}</span></h2>
-                            <p class="text-sm text-muted">${bestDays}</p>
-                        </div>
-                        ${freqDays}
-                        <div class="mt-4 space-y-3">${yearsHtml}</div>
-                        ${hiddenCount > 0 ? `<p class="text-xs text-faint mt-2">+ ${hiddenCount} années cachées</p>` : ''}
-                        <div class="mt-4">
-                            <button class="btn btn-outline btn-sm" onclick='downloadCSV(${JSON.stringify(item)}, "${data.month}")'>
-                                💾 Export CSV
-                            </button>
-                        </div>
-                    </div>`;
-            }).join('');
-        }
-
-        function downloadCSV(item, monthLabel) {
-            const rows = [];
-            rows.push(['ticker', 'month', 'year', 'date', 'price'].join(','));
-
-            (item.perYear || []).forEach(year => {
-                (year.lows || []).forEach(low => {
-                    const price = typeof low.price === 'number' ? low.price.toFixed(4) : low.price;
-                    rows.push([item.ticker, monthLabel, year.year, low.date, price].join(','));
-                });
-            });
-
-            const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `dca-${item.ticker}-${monthLabel}.csv`;
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-    </script>
 </body>
 
 </html>

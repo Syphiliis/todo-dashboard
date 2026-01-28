@@ -298,9 +298,15 @@ def proxy_dca(path):
 
 
 @app.route('/dca')
-@app.route('/dca/<path:path>')
-def dca(path=''):
-    """Serve the DCA tool view via the DCA server."""
+def dca_page():
+    """Serve the DCA wrapper page."""
+    return send_from_directory(app.static_folder, 'dca.html')
+
+
+@app.route('/dca-content')
+@app.route('/dca-content/<path:path>')
+def dca_content(path=''):
+    """Proxy content for the DCA iframe."""
     return proxy_dca(path)
 
 

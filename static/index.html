@@ -75,8 +75,9 @@
     </div>
 
     <div class="relative z-10 max-w-7xl mx-auto p-4 md:p-8 space-y-8" id="top">
-        <header class="flex flex-col md:flex-row justify-between items-start md:items-center pb-6 gap-4"
-            style="border-bottom: 1px solid var(--border-subtle);">
+        <header
+            class="sticky top-0 z-50 flex flex-col md:flex-row justify-between items-start md:items-center pb-6 gap-4 pt-4 -mt-4"
+            style="border-bottom: 1px solid var(--border-subtle); background-color: var(--bg-base); backdrop-filter: blur(20px);">
             <div>
                 <div class="flex items-center gap-3">
                     <div class="w-11 h-11 rounded-xl flex items-center justify-center text-xl"
@@ -280,7 +281,7 @@
                 <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center gap-2">
                         <span class="text-2xl">☀️</span>
-                        <h3 class="text-sm font-bold tracking-widest text-subtle uppercase">Ma Journée</h3>
+                        <h3 class="text-lg font-bold tracking-wide" style="color: var(--text-primary);">MA JOURNÉE</h3>
                     </div>
                     <span class="text-xs text-muted" id="todayTaskCount">0 tâches prioritaires</span>
                 </div>
@@ -416,8 +417,8 @@
                 </div>
                 <div
                     class="p-6 border-b border-subtle flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative z-10">
-                    <h2 class="text-xl font-display font-medium text-ink" id="sectionTitle">Toutes
-                        les tâches</h2>
+                    <h2 class="text-2xl font-display font-semibold" style="color: var(--text-primary);"
+                        id="sectionTitle">Toutes les tâches</h2>
                     <div class="flex p-1 bg-surface-2 rounded-lg border border-subtle">
                         <button type="button"
                             class="filter-tab px-4 py-1.5 rounded-md text-xs font-medium transition-all active"
