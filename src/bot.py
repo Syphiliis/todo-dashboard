@@ -531,8 +531,8 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
 • `/event <détails>` - Créer un événement (langage naturel)
 
 📝 **Gestion des tâches**
-• `/add <tâche>` - Ajoute une nouvelle tâche (mode intelligent)
-• `/add --force <tâche>` - Ajoute sans reformulation IA
+• `/add <tâche>` - Ajoute une tâche (analyse IA)
+• `/addforce <tâche>` - Ajoute sans IA (direct)
 • `/list` - Liste toutes les tâches en attente
 • `/done <id ou titre>` - Marque une tâche comme terminée
 
@@ -606,48 +606,31 @@ _Copie et adapte selon tes besoins!_"""
 
 
 async def cmd_add(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handler /add <tâche> - Ajoute une tâche
-
-    Flags:
-        --force ou -f : Ajoute la tâche telle quelle sans reformulation IA
-    """
+    """Handler /add <tâche> - Ajoute une tâche avec analyse IA"""
     if not context.args:
         await update.message.reply_text(
-            "Usage: `/add <tâche> [urgent|important] [catégorie]`\n"
-            "Option: `--force` ou `-f` pour ajouter sans reformulation IA",
+            "Usage:\n"
+            "• `/add <tâche>` — ajout intelligent avec analyse IA\n"
+            "• `/addforce <tâche>` — ajout direct sans IA",
             parse_mode='Markdown'
         )
         return
 
-    args = list(context.args)
-    force_mode = False
+    message = ' '.join(context.args)
+    await process_add_task(update, message)
 
-    # Détecter le flag --force ou -f
-    # Telegram/iOS convertit -- en em-dash (—), en-dash (–), etc.
-    # On strip tous les types de tirets Unicode et on vérifie si le reste est "force"
-    force_idx = None
-    for i, arg in enumerate(args):
-        cleaned = arg.lstrip('-\u2014\u2013\u2012\u2015\u2212\u002D')
-        if cleaned.lower() == 'force':
-            force_idx = i
-            break
-        if arg == '-f':
-            force_idx = i
-            break
-    if force_idx is not None:
-        force_mode = True
-        args.pop(force_idx)
 
-    message = ' '.join(args)
-
-    if not message:
-        await update.message.reply_text("❌ Titre de tâche requis.", parse_mode='Markdown')
+async def cmd_addforce(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handler /addforce <tâche> - Ajoute une tâche sans analyse IA"""
+    if not context.args:
+        await update.message.reply_text(
+            "Usage: `/addforce <tâche> [urgent|important] [catégorie]`",
+            parse_mode='Markdown'
+        )
         return
 
-    if force_mode:
-        await process_add_task_force(update, message)
-    else:
-        await process_add_task(update, message)
+    message = ' '.join(context.args)
+    await process_add_task_force(update, message)
 
 
 async def cmd_done(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1400,6 +1383,7 @@ def main():
     app.add_handler(CommandHandler("roadmap", cmd_roadmap))
     app.add_handler(CommandHandler("content", cmd_content))
     app.add_handler(CommandHandler("add", cmd_add))
+    app.add_handler(CommandHandler("addforce", cmd_addforce))
     app.add_handler(CommandHandler("done", cmd_done))
     app.add_handler(CommandHandler("help", cmd_help))
     app.add_handler(CommandHandler("site", cmd_site))
