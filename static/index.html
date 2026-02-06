@@ -89,7 +89,7 @@
                             style="color: var(--text-primary);">
                             Alex <span style="color: var(--primary);">Dashboard</span>
                         </h1>
-                        <p class="text-sm mt-0.5" id="currentDate" style="color: var(--text-muted);">Chargement...</p>
+                        <p class="text-sm mt-0.5" style="color: var(--text-muted);"><span id="currentDate">Chargement...</span> <span id="appVersion" style="opacity:0.5; font-size:0.75rem;"></span></p>
                     </div>
                 </div>
             </div>
@@ -724,12 +724,21 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             updateDate();
+            loadVersion();
             loadTodos();
             loadStats();
             loadDailyContent();
             loadRoadmap();
             setupEventListeners();
         });
+
+        async function loadVersion() {
+            try {
+                const res = await fetch('/api/version');
+                const data = await res.json();
+                document.getElementById('appVersion').textContent = 'v' + data.version;
+            } catch (e) {}
+        }
 
         function updateDate() {
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };

@@ -11,7 +11,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask, request, jsonify, send_from_directory, Response
 from flask_cors import CORS
 
-from src.config import DASHBOARD_ACCESS_TOKEN, DCA_APP_URL, DCA_BACKEND_URL, PORT, TIMEZONE
+from src.config import APP_VERSION, DASHBOARD_ACCESS_TOKEN, DCA_APP_URL, DCA_BACKEND_URL, PORT, TIMEZONE
 from src.db import get_db, init_db
 from src.services.daily_content import generate_daily_content
 from src.services.ai_cache import cleanup_expired, get_cached, set_cached
@@ -111,6 +111,12 @@ def check_dashboard_access():
 
 
 # ============== API Routes ==============
+
+@app.route('/api/version')
+def api_version():
+    """Return current app version."""
+    return jsonify({'version': APP_VERSION})
+
 
 @app.route('/login')
 def login():
