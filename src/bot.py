@@ -1199,42 +1199,35 @@ async def process_add_task(update: Update, message: str):
 
 async def process_add_task_force(update: Update, message: str):
     """
-    Ajoute une tâche directement sans reformulation IA.
-    Détecte uniquement priorité et catégorie via patterns simples.
+    Ajoute une tâche avec classification IA légère.
+    Titre conservé tel quel, l'IA détecte juste catégorie + priorité.
     """
-    message_lower = message.lower()
-
-    # Détection priorité (patterns simples)
-    priority = 'normal'
-    if 'urgent' in message_lower:
-        priority = 'urgent'
-        message = re.sub(r'\s*urgent\s*', ' ', message, flags=re.IGNORECASE).strip()
-    elif 'important' in message_lower:
-        priority = 'important'
-        message = re.sub(r'\s*important\s*', ' ', message, flags=re.IGNORECASE).strip()
-
-    # Détection catégorie (patterns simples)
-    categories = ['easynode', 'immobilier', 'content', 'personnel', 'admin']
-    category = 'easynode'  # default
-    for cat in categories:
-        if cat in message_lower:
-            category = cat
-            message = re.sub(rf'\s*{cat}\s*', ' ', message, flags=re.IGNORECASE).strip()
-            break
-
-    # Nettoyer le titre
-    title = ' '.join(message.split())  # Remove extra spaces
+    title = ' '.join(message.split()).strip()
 
     if not title:
         await update.message.reply_text("❌ Titre de tâche requis.", parse_mode='Markdown')
         return
 
-    # Créer la tâche directement
-    todo = create_todo(
-        title=title,
-        category=category,
-        priority=priority
-    )
+    # Classification IA légère (catégorie + priorité uniquement)
+    category = 'personnel'
+    priority = 'normal'
+    try:
+        response = claude.messages.create(
+            model=CLAUDE_MODEL,
+            max_tokens=60,
+            system="Classe cette tâche. Réponds UNIQUEMENT en JSON.",
+            messages=[{"role": "user", "content": f'Tâche: "{title}"\n\n{{"category":"easynode|immobilier|content|personnel|admin","priority":"urgent|important|normal"}}'}]
+        )
+        text = response.content[0].text.strip()
+        if text.startswith('```'):
+            text = re.sub(r'```json?\n?', '', text).replace('```', '')
+        result = json.loads(text)
+        category = result.get('category', 'personnel')
+        priority = result.get('priority', 'normal')
+    except Exception as e:
+        logger.warning(f"Force add classification failed, using defaults: {e}")
+
+    todo = create_todo(title=title, category=category, priority=priority)
 
     if 'error' in todo:
         await update.message.reply_text(f"❌ Erreur création: {todo['error']}")
@@ -1242,7 +1235,7 @@ async def process_add_task_force(update: Update, message: str):
 
     priority_emoji = {'urgent': '🔴', 'important': '🟠', 'normal': '🟡'}.get(priority, '⚪')
 
-    msg = f"""✅ **Tâche ajoutée (mode direct)**
+    msg = f"""✅ **Tâche ajoutée!**
 
 {priority_emoji} **{todo['title']}**
 📁 {todo['category']}
