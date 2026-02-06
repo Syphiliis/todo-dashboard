@@ -5,15 +5,19 @@
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR" || exit 1
 
-# Launch gunicorn (dashboard)
+# Launch gunicorn (dashboard) immediately
 python3 -m gunicorn -w 2 -b 0.0.0.0:5001 src.app:app &
 GUNICORN_PID=$!
+
+# Wait for old Telegram polling session to expire before starting bot
+echo "Dashboard PID: $GUNICORN_PID — waiting 10s for Telegram polling reset..."
+sleep 10
 
 # Launch bot
 python3 -m src.bot &
 BOT_PID=$!
 
-echo "Dashboard PID: $GUNICORN_PID | Bot PID: $BOT_PID"
+echo "Bot PID: $BOT_PID — all services running"
 
 # If either process exits, kill the other and exit (systemd will restart)
 cleanup() {
