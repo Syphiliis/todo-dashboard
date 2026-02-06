@@ -112,6 +112,19 @@ def init_db() -> None:
         );
     ''')
 
+    # AI Cache table for caching Claude responses
+    conn.executescript('''
+        CREATE TABLE IF NOT EXISTS ai_cache (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cache_key TEXT UNIQUE NOT NULL,
+            cache_type TEXT NOT NULL,
+            result_json TEXT NOT NULL,
+            todo_id INTEGER,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            expires_at DATETIME NOT NULL
+        );
+    ''')
+
     # Add recurrence columns if not exist (safe migration)
     try:
         conn.execute('ALTER TABLE todos ADD COLUMN recurrence_pattern TEXT')

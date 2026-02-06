@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 
 from src.db import get_db
 from src.services.telegram import send_telegram_message
@@ -40,7 +41,47 @@ def check_deadlines() -> None:
     conn.close()
 
 
+def record_daily_stats() -> None:
+    """Record daily task stats into task_history for analytics."""
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        today = datetime.now().date().isoformat()
+
+        cursor.execute(
+            'SELECT COUNT(*) as count FROM todos WHERE status = "completed" AND date(completed_at) = ?',
+            (today,)
+        )
+        completed = cursor.fetchone()['count']
+
+        cursor.execute(
+            'SELECT COUNT(*) as count FROM todos WHERE date(created_at) = ?',
+            (today,)
+        )
+        created = cursor.fetchone()['count']
+
+        cursor.execute('SELECT COUNT(*) as count FROM todos WHERE status = "pending"')
+        pending = cursor.fetchone()['count']
+
+        cursor.execute('''
+            INSERT INTO task_history (date, completed_count, created_count, pending_count)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(date) DO UPDATE SET
+                completed_count = excluded.completed_count,
+                created_count = excluded.created_count,
+                pending_count = excluded.pending_count
+        ''', (today, completed, created, pending))
+
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+
 def send_daily_recap() -> None:
+    # Record stats before sending recap
+    record_daily_stats()
+
     try:
         conn = get_db()
         cursor = conn.cursor()
@@ -85,5 +126,82 @@ def send_daily_recap() -> None:
         message += "<i>Bonne soirée Alexandre! 💪</i>"
 
         send_telegram_message(message)
+    except Exception:
+        pass
+
+
+RECURRENCE_DELTAS = {
+    'daily': timedelta(days=1),
+    'weekdays': timedelta(days=1),  # special handling below
+    'weekly': timedelta(weeks=1),
+    'biweekly': timedelta(weeks=2),
+    'monthly': relativedelta(months=1),
+}
+
+
+def spawn_recurring_tasks() -> None:
+    """Check completed recurring tasks and create the next occurrence."""
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        now = datetime.now()
+
+        cursor.execute('''
+            SELECT * FROM todos
+            WHERE recurrence_pattern IS NOT NULL
+            AND status = 'completed'
+            AND recurrence_pattern != ''
+        ''')
+        tasks = [dict(row) for row in cursor.fetchall()]
+
+        for task in tasks:
+            pattern = task['recurrence_pattern']
+            completed_at = datetime.fromisoformat(task['completed_at']) if task.get('completed_at') else now
+
+            delta = RECURRENCE_DELTAS.get(pattern)
+            if not delta:
+                continue
+
+            next_date = completed_at + delta
+
+            # Weekdays: skip Saturday/Sunday
+            if pattern == 'weekdays':
+                while next_date.weekday() >= 5:  # 5=Sat, 6=Sun
+                    next_date += timedelta(days=1)
+
+            # Check recurrence_end_date
+            if task.get('recurrence_end_date'):
+                end_date = datetime.fromisoformat(task['recurrence_end_date'])
+                if next_date > end_date:
+                    continue
+
+            # Only spawn if next_date has been reached
+            if next_date > now:
+                continue
+
+            # Check if a pending copy already exists (avoid duplicates)
+            cursor.execute('''
+                SELECT COUNT(*) as count FROM todos
+                WHERE title = ? AND status = 'pending' AND recurrence_pattern = ?
+            ''', (task['title'], pattern))
+            if cursor.fetchone()['count'] > 0:
+                continue
+
+            # Create fresh copy
+            cursor.execute('''
+                INSERT INTO todos (title, description, category, priority, deadline, recurrence_pattern, recurrence_end_date)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                task['title'],
+                task.get('description'),
+                task.get('category', 'general'),
+                task.get('priority', 'normal'),
+                next_date.isoformat() if task.get('deadline') else None,
+                pattern,
+                task.get('recurrence_end_date')
+            ))
+
+        conn.commit()
+        conn.close()
     except Exception:
         pass

@@ -199,6 +199,33 @@
             </div>
         </div>
 
+        <!-- Briefing IA -->
+        <div class="glass-panel rounded-xl reveal" style="--delay: 0.25s; display: none;" id="section-briefing">
+            <div class="p-6 cursor-pointer flex items-center justify-between" onclick="toggleBriefingPanel()">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">🤖</span>
+                    <h2 class="text-sm font-bold tracking-widest uppercase" style="color: var(--text-muted);">Briefing IA du jour</h2>
+                    <span class="text-xs px-2 py-0.5 rounded-full" id="briefingCacheBadge"
+                        style="background: var(--success-light); color: var(--success); display: none;">caché</span>
+                </div>
+                <span class="material-icons-round text-muted transition-transform" id="briefingChevron">expand_more</span>
+            </div>
+            <div class="px-6 pb-6" id="briefingContent" style="display: none;">
+                <div class="p-4 rounded-lg text-sm leading-relaxed whitespace-pre-line"
+                    style="background: var(--bg-elevated); color: var(--text-secondary);"
+                    id="briefingText">
+                    Chargement...
+                </div>
+                <div class="flex items-center justify-between mt-3">
+                    <span class="text-xs text-muted" id="briefingTime"></span>
+                    <button type="button" class="btn btn-sm btn-ghost" onclick="refreshBriefing()">
+                        <span class="material-icons-round text-sm">refresh</span>
+                        Régénérer
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Roadmap Section -->
         <div class="glass-panel rounded-xl reveal" style="--delay: 0.3s;" id="section-roadmap">
             <div
@@ -232,23 +259,35 @@
 
         <!-- Analytics & Habits Row -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 reveal" style="--delay: 0.35s;" id="section-analytics">
-            <!-- Graphique Productivité -->
+            <!-- Graphique Productivité / Burndown -->
             <div class="glass-panel rounded-xl p-6">
                 <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center gap-2">
                         <span class="text-2xl">📊</span>
-                        <h3 class="text-sm font-bold tracking-widest text-subtle uppercase">Productivité</h3>
+                        <div class="flex p-1 bg-surface-2 rounded-lg border border-subtle">
+                            <button type="button" class="chart-tab px-3 py-1 rounded-md text-xs font-medium transition-all active"
+                                data-chart="productivity" onclick="switchChart('productivity')">Productivité</button>
+                            <button type="button" class="chart-tab px-3 py-1 rounded-md text-xs font-medium transition-all"
+                                data-chart="burndown" onclick="switchChart('burndown')">Burndown</button>
+                        </div>
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="text-xs text-success font-semibold" id="streakBadge">🔥 0 jours</span>
                     </div>
                 </div>
-                <div class="relative h-48 w-full">
+                <div class="relative h-48 w-full" id="productivityChartContainer">
                     <canvas id="productivityChart"></canvas>
                 </div>
-                <div class="flex justify-between mt-4 text-xs text-muted">
+                <div class="relative h-48 w-full" id="burndownChartContainer" style="display: none;">
+                    <canvas id="burndownChart"></canvas>
+                </div>
+                <div class="flex justify-between mt-4 text-xs text-muted" id="productivityFooter">
                     <span>Meilleur jour: <strong id="bestDayLabel">-</strong></span>
                     <span>Cette semaine: <strong id="weeklyTotal">0</strong> tâches</span>
+                </div>
+                <div class="flex justify-between mt-4 text-xs text-muted" id="burndownFooter" style="display: none;">
+                    <span>Réel vs Idéal</span>
+                    <span>Derniers 7 jours</span>
                 </div>
             </div>
 
@@ -283,6 +322,14 @@
                         <h3 class="text-lg font-bold tracking-wide" style="color: var(--text-primary);">MA JOURNÉE</h3>
                     </div>
                     <span class="text-xs text-muted" id="todayTaskCount">0 tâches prioritaires</span>
+                </div>
+                <!-- AI Priorities -->
+                <div id="aiPrioritiesContainer" class="mb-4" style="display: none;">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-sm">🤖</span>
+                        <h4 class="text-xs font-bold tracking-widest uppercase" style="color: var(--primary);">Ordre suggéré par l'IA</h4>
+                    </div>
+                    <div id="aiPrioritiesList" class="space-y-1"></div>
                 </div>
                 <div id="todayTasksContainer" class="space-y-2">
                     <div class="text-center py-8 text-faint">
@@ -416,8 +463,20 @@
                 </div>
                 <div
                     class="p-6 border-b border-subtle flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative z-10">
-                    <h2 class="text-2xl font-display font-semibold" style="color: var(--text-primary);"
-                        id="sectionTitle">Toutes les tâches</h2>
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-2xl font-display font-semibold" style="color: var(--text-primary);"
+                            id="sectionTitle">Toutes les tâches</h2>
+                        <div class="flex p-1 bg-surface-2 rounded-lg border border-subtle">
+                            <button type="button" class="view-toggle px-2 py-1 rounded-md active" data-view="list"
+                                title="Vue liste" onclick="setView('list')">
+                                <span class="material-icons-round text-sm">view_list</span>
+                            </button>
+                            <button type="button" class="view-toggle px-2 py-1 rounded-md" data-view="kanban"
+                                title="Vue Kanban" onclick="setView('kanban')">
+                                <span class="material-icons-round text-sm">view_kanban</span>
+                            </button>
+                        </div>
+                    </div>
                     <div class="flex p-1 bg-surface-2 rounded-lg border border-subtle">
                         <button type="button"
                             class="filter-tab px-4 py-1.5 rounded-md text-xs font-medium transition-all active"
@@ -425,6 +484,9 @@
                         <button type="button"
                             class="filter-tab px-4 py-1.5 rounded-md text-xs font-medium transition-all"
                             data-status="pending">En attente</button>
+                        <button type="button"
+                            class="filter-tab px-4 py-1.5 rounded-md text-xs font-medium transition-all"
+                            data-status="in_progress">En cours</button>
                         <button type="button"
                             class="filter-tab px-4 py-1.5 rounded-md text-xs font-medium transition-all"
                             data-status="archived">Archives</button>
@@ -441,6 +503,35 @@
                             <span class="material-icons-round">add</span>
                         </button>
                     </div>
+                    <!-- Kanban View -->
+                    <div id="kanbanView" class="kanban-board" style="display: none;">
+                        <div class="kanban-column" data-status="pending"
+                            ondragover="handleDragOver(event)" ondrop="handleDrop(event, 'pending')">
+                            <div class="kanban-column-header">
+                                <span class="text-xs font-bold tracking-widest uppercase" style="color: var(--warning);">En attente</span>
+                                <span class="kanban-count" id="kanbanPendingCount">0</span>
+                            </div>
+                            <div class="kanban-cards" id="kanbanPending"></div>
+                        </div>
+                        <div class="kanban-column" data-status="in_progress"
+                            ondragover="handleDragOver(event)" ondrop="handleDrop(event, 'in_progress')">
+                            <div class="kanban-column-header">
+                                <span class="text-xs font-bold tracking-widest uppercase" style="color: var(--primary);">En cours</span>
+                                <span class="kanban-count" id="kanbanProgressCount">0</span>
+                            </div>
+                            <div class="kanban-cards" id="kanbanInProgress"></div>
+                        </div>
+                        <div class="kanban-column" data-status="completed"
+                            ondragover="handleDragOver(event)" ondrop="handleDrop(event, 'completed')">
+                            <div class="kanban-column-header">
+                                <span class="text-xs font-bold tracking-widest uppercase" style="color: var(--success);">Terminé</span>
+                                <span class="kanban-count" id="kanbanCompletedCount">0</span>
+                            </div>
+                            <div class="kanban-cards" id="kanbanCompleted"></div>
+                        </div>
+                    </div>
+
+                    <!-- List View -->
                     <div class="space-y-3" id="todoList">
                         <div class="flex flex-col items-center justify-center h-64 text-center mt-4">
                             <div class="relative mb-6">
@@ -502,6 +593,22 @@
                 <div class="form-group">
                     <label class="label" for="todoDeadline">Deadline (optionnel)</label>
                     <input class="field" type="datetime-local" id="todoDeadline" />
+                    <div id="deadlineHint" class="text-xs mt-1" style="color: var(--primary); display: none;">
+                        <span id="deadlineHintText"></span>
+                        <button type="button" class="text-xs font-medium underline ml-1" onclick="applyDeadlineSuggestion()"
+                            style="color: var(--primary); background: none; border: none; cursor: pointer;">Appliquer</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="label" for="todoRecurrence">Récurrence</label>
+                    <select class="field" id="todoRecurrence">
+                        <option value="">Aucune</option>
+                        <option value="daily">Quotidien</option>
+                        <option value="weekdays">Jours ouvrables</option>
+                        <option value="weekly">Hebdomadaire</option>
+                        <option value="biweekly">Bimensuel</option>
+                        <option value="monthly">Mensuel</option>
+                    </select>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
@@ -677,6 +784,11 @@
                 if (e.key === 'Enter') quickAdd();
             });
 
+            // Deadline suggestion on title blur
+            document.getElementById('todoTitle').addEventListener('blur', () => {
+                if (!document.getElementById('todoId').value) fetchDeadlineSuggestion();
+            });
+
             // Form submit
             document.getElementById('todoForm').addEventListener('submit', handleFormSubmit);
 
@@ -837,6 +949,7 @@
 
         // Render Functions
         function renderTodos() {
+            if (currentView === 'kanban') { renderKanban(); return; }
             const list = document.getElementById('todoList');
             const source = currentFilter.status === 'archived' ? archivedTodos : todos;
             let filtered = [...source];
@@ -912,6 +1025,11 @@
                         <div class="todo-meta">
                             <span>${categoryEmoji} ${todo.category}</span>
                             ${deadlineStr ? `<span>⏳ ${deadlineStr}</span>` : ''}
+                            ${todo.recurrence_pattern ? `<span>🔁 ${{'daily':'Quotidien','weekdays':'Jours ouvrés','weekly':'Hebdo','biweekly':'Bimensuel','monthly':'Mensuel'}[todo.recurrence_pattern] || todo.recurrence_pattern}</span>` : ''}
+                            ${todo.subtask_count > 0 ? `<span class="subtask-badge" onclick="event.stopPropagation(); toggleSubtasks(${todo.id})">📋 ${todo.subtask_done_count}/${todo.subtask_count}</span>
+                            <div class="progress-track" style="width: 60px; height: 4px; display: inline-block; vertical-align: middle; margin-left: 4px;">
+                                <div class="progress-fill" style="width: ${Math.round((todo.subtask_done_count / todo.subtask_count) * 100)}%"></div>
+                            </div>` : ''}
                             ${isArchived ? `<span>📦 Archivée</span>` : ''}
                         </div>
                     </div>
@@ -922,6 +1040,7 @@
                             <span class="material-icons-round text-sm">restart_alt</span>
                         </button>
                         ` : ''}
+                        ${!isArchived && (!todo.subtask_count || todo.subtask_count === 0) ? `<button class="action-btn" onclick="decomposeTask(${todo.id})" title="Décomposer (IA)">🤖</button>` : ''}
                         <button class="action-btn" onclick="editTodo(${todo.id})">✏️</button>
                         <button class="action-btn delete" onclick="deleteTodo(${todo.id})">🗑️</button>
                     </div>
@@ -980,6 +1099,8 @@
 
             form.reset();
             document.getElementById('todoId').value = '';
+            document.getElementById('deadlineHint').style.display = 'none';
+            suggestedDeadlineDate = null;
 
             if (todoId) {
                 const todo = todos.find(t => t.id === todoId);
@@ -992,11 +1113,13 @@
                     document.getElementById('todoPriority').value = todo.priority;
                     if (todo.deadline) {
                         try {
-                            // Ensure deadline is in correct format for datetime-local (YYYY-MM-DDThh:mm)
                             document.getElementById('todoDeadline').value = todo.deadline.slice(0, 16);
                         } catch (e) {
                             console.error("Date error", e);
                         }
+                    }
+                    if (todo.recurrence_pattern) {
+                        document.getElementById('todoRecurrence').value = todo.recurrence_pattern;
                     }
                 }
             } else {
@@ -1023,7 +1146,8 @@
                 description: document.getElementById('todoDescription').value,
                 category: document.getElementById('todoCategory').value,
                 priority: document.getElementById('todoPriority').value,
-                deadline: document.getElementById('todoDeadline').value || null
+                deadline: document.getElementById('todoDeadline').value || null,
+                recurrence_pattern: document.getElementById('todoRecurrence').value || null
             };
 
             if (id) {
@@ -1068,6 +1192,197 @@
                 }
             } catch (error) {
                 console.error('Error refreshing daily content:', error);
+            }
+        }
+
+        // ============== BRIEFING IA ==============
+
+        async function loadBriefing() {
+            try {
+                const response = await fetch(`${API_URL}/api/briefing`);
+                if (!response.ok) return;
+                const data = await response.json();
+                if (data.error) return;
+
+                document.getElementById('section-briefing').style.display = '';
+                document.getElementById('briefingText').textContent = data.briefing;
+                if (data.cached) {
+                    document.getElementById('briefingCacheBadge').style.display = '';
+                }
+                if (data.generated_at) {
+                    const dt = new Date(data.generated_at);
+                    document.getElementById('briefingTime').textContent =
+                        `Généré à ${dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+                }
+            } catch (error) {
+                // Briefing not available, keep hidden
+            }
+        }
+
+        function toggleBriefingPanel() {
+            const content = document.getElementById('briefingContent');
+            const chevron = document.getElementById('briefingChevron');
+            const isHidden = content.style.display === 'none';
+            content.style.display = isHidden ? '' : 'none';
+            chevron.style.transform = isHidden ? 'rotate(180deg)' : '';
+        }
+
+        async function refreshBriefing() {
+            document.getElementById('briefingText').textContent = 'Génération en cours...';
+            document.getElementById('briefingCacheBadge').style.display = 'none';
+            try {
+                // Invalidate cache by re-fetching (the endpoint generates if not cached)
+                const response = await fetch(`${API_URL}/api/briefing`);
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('briefingText').textContent = data.briefing;
+                    if (data.generated_at) {
+                        const dt = new Date(data.generated_at);
+                        document.getElementById('briefingTime').textContent =
+                            `Généré à ${dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+                    }
+                }
+            } catch (error) {
+                document.getElementById('briefingText').textContent = 'Erreur lors de la génération.';
+            }
+        }
+
+        // ============== AI PRIORITIES ==============
+
+        async function loadAIPriorities() {
+            try {
+                const response = await fetch(`${API_URL}/api/ai/priorities`);
+                if (!response.ok) return;
+                const data = await response.json();
+                if (data.error || !data.priorities || data.priorities.length === 0) return;
+
+                const container = document.getElementById('aiPrioritiesContainer');
+                const list = document.getElementById('aiPrioritiesList');
+                container.style.display = '';
+
+                list.innerHTML = data.priorities.slice(0, 5).map((p, i) => `
+                    <div class="flex items-center gap-2 p-2 rounded-lg" style="background: var(--bg-elevated);">
+                        <span class="text-xs font-bold" style="color: var(--primary); min-width: 20px;">#${i + 1}</span>
+                        <span class="text-sm flex-1" style="color: var(--text-primary);">${p.title}</span>
+                        <span class="text-xs" style="color: var(--text-muted);">${p.reason || ''}</span>
+                    </div>
+                `).join('');
+
+                if (data.summary) {
+                    list.innerHTML += `<p class="text-xs mt-2 italic" style="color: var(--text-muted);">${data.summary}</p>`;
+                }
+            } catch (error) {
+                // AI priorities not available
+            }
+        }
+
+        // ============== DEADLINE SUGGESTION ==============
+
+        let suggestedDeadlineDate = null;
+
+        async function fetchDeadlineSuggestion() {
+            const title = document.getElementById('todoTitle').value;
+            const category = document.getElementById('todoCategory').value;
+            const deadline = document.getElementById('todoDeadline').value;
+
+            if (!title || title.length < 3 || deadline) return;
+
+            try {
+                const response = await fetch(`${API_URL}/api/ai/suggest-deadline`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, category })
+                });
+                if (!response.ok) return;
+                const data = await response.json();
+                if (data.error) return;
+
+                suggestedDeadlineDate = data.suggested_date;
+                const hint = document.getElementById('deadlineHint');
+                const text = document.getElementById('deadlineHintText');
+                text.textContent = `Suggestion IA : dans ${data.suggested_days} jour${data.suggested_days > 1 ? 's' : ''}`;
+                hint.style.display = '';
+            } catch (error) {
+                // Ignore
+            }
+        }
+
+        function applyDeadlineSuggestion() {
+            if (suggestedDeadlineDate) {
+                document.getElementById('todoDeadline').value = suggestedDeadlineDate + 'T18:00';
+                document.getElementById('deadlineHint').style.display = 'none';
+            }
+        }
+
+        // ============== TASK DECOMPOSE ==============
+
+        async function decomposeTask(todoId) {
+            if (!confirm('Décomposer cette tâche en sous-tâches avec l\'IA ?')) return;
+
+            try {
+                const response = await fetch(`${API_URL}/api/todos/${todoId}/decompose`, { method: 'POST' });
+                if (!response.ok) { alert('Erreur lors de la décomposition.'); return; }
+                const data = await response.json();
+                if (data.error) { alert(data.error); return; }
+
+                const subtasks = data.subtasks || [];
+                if (subtasks.length === 0) { alert('Aucune sous-tâche suggérée.'); return; }
+
+                const list = subtasks.map((st, i) => `${i + 1}. ${st.title} (${st.estimated_time || '?'})`).join('\n');
+                if (!confirm(`Sous-tâches proposées :\n\n${list}\n\nCréer ces sous-tâches ?`)) return;
+
+                // Find parent task category
+                const parentTodo = todos.find(t => t.id === todoId);
+                const category = parentTodo ? parentTodo.category : 'general';
+
+                const applyResponse = await fetch(`${API_URL}/api/todos/${todoId}/apply-subtasks`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ subtasks, category })
+                });
+                if (applyResponse.ok) {
+                    loadTodos();
+                    loadStats();
+                }
+            } catch (error) {
+                console.error('Decompose error:', error);
+            }
+        }
+
+        // ============== SUBTASKS TOGGLE ==============
+
+        async function toggleSubtasks(todoId) {
+            const existingPanel = document.querySelector(`.subtasks-panel[data-parent="${todoId}"]`);
+            if (existingPanel) {
+                existingPanel.remove();
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/todos/${todoId}/subtasks`);
+                const subtasks = await response.json();
+
+                const todoItem = document.querySelector(`.todo-item[data-id="${todoId}"]`);
+                if (!todoItem) return;
+
+                const panel = document.createElement('div');
+                panel.className = 'subtasks-panel';
+                panel.setAttribute('data-parent', todoId);
+                panel.style.cssText = 'margin-left: 28px; margin-top: 8px; border-left: 2px solid var(--primary); padding-left: 12px;';
+
+                panel.innerHTML = subtasks.map(st => {
+                    const isDone = st.status === 'completed';
+                    return `
+                        <div class="flex items-center gap-2 py-1">
+                            <div class="todo-checkbox ${isDone ? 'checked' : ''}" style="width: 16px; height: 16px;"
+                                onclick="toggleTodo(${st.id}, '${st.status}', false)"></div>
+                            <span class="text-sm ${isDone ? 'line-through text-muted' : ''}" style="color: var(--text-primary);">${st.title}</span>
+                        </div>`;
+                }).join('');
+
+                todoItem.appendChild(panel);
+            } catch (error) {
+                console.error('Load subtasks error:', error);
             }
         }
 
@@ -1261,6 +1576,114 @@
         // Nouvelles fonctionnalités JS
         // ==========================================
 
+        // ============== KANBAN VIEW ==============
+
+        let currentView = 'list';
+
+        function setView(view) {
+            currentView = view;
+            document.querySelectorAll('.view-toggle').forEach(b => b.classList.remove('active'));
+            document.querySelector(`.view-toggle[data-view="${view}"]`).classList.add('active');
+
+            if (view === 'kanban') {
+                document.getElementById('todoList').style.display = 'none';
+                document.getElementById('kanbanView').style.display = '';
+                document.getElementById('section-add').style.display = 'none';
+                renderKanban();
+            } else {
+                document.getElementById('todoList').style.display = '';
+                document.getElementById('kanbanView').style.display = 'none';
+                document.getElementById('section-add').style.display = '';
+                renderTodos();
+            }
+        }
+
+        function renderKanban() {
+            // Get all non-archived todos plus recently completed (last 24h)
+            const now = new Date();
+            const yesterday = new Date(now - 24 * 60 * 60 * 1000);
+
+            let allTodos = [...todos];
+            // Include completed from archivedTodos completed today
+            const recentCompleted = archivedTodos.filter(t => {
+                if (t.status !== 'completed') return false;
+                const ca = t.completed_at ? new Date(t.completed_at) : null;
+                return ca && ca > yesterday;
+            });
+            allTodos = allTodos.concat(recentCompleted);
+
+            // Filter by category if needed
+            let filtered = allTodos;
+            if (currentFilter.category !== 'all') {
+                filtered = filtered.filter(t => t.category === currentFilter.category);
+            }
+
+            const pending = filtered.filter(t => t.status === 'pending');
+            const inProgress = filtered.filter(t => t.status === 'in_progress');
+            const completed = recentCompleted.filter(t => {
+                if (currentFilter.category !== 'all') return t.category === currentFilter.category;
+                return true;
+            });
+
+            document.getElementById('kanbanPendingCount').textContent = pending.length;
+            document.getElementById('kanbanProgressCount').textContent = inProgress.length;
+            document.getElementById('kanbanCompletedCount').textContent = completed.length;
+
+            document.getElementById('kanbanPending').innerHTML = pending.map(t => kanbanCard(t)).join('');
+            document.getElementById('kanbanInProgress').innerHTML = inProgress.map(t => kanbanCard(t)).join('');
+            document.getElementById('kanbanCompleted').innerHTML = completed.map(t => kanbanCard(t, true)).join('');
+        }
+
+        function kanbanCard(todo, isDone = false) {
+            const priorityClass = `priority-${todo.priority}`;
+            const categoryEmoji = {'easynode':'🚀','immobilier':'🏯','content':'📱','personnel':'🎋','admin':'📄'}[todo.category] || '📋';
+            return `
+                <div class="kanban-card ${isDone ? 'opacity-60' : ''}" draggable="true"
+                    data-id="${todo.id}" ondragstart="handleDragStart(event, ${todo.id})">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="priority-badge ${priorityClass}" style="font-size: 10px;">${todo.priority}</span>
+                        <span class="text-xs text-muted">${categoryEmoji}</span>
+                    </div>
+                    <div class="text-sm font-medium" style="color: var(--text-primary);">${todo.title}</div>
+                    ${todo.deadline ? `<div class="text-xs text-muted mt-1">⏳ ${new Date(todo.deadline).toLocaleDateString('fr-FR', {day:'numeric', month:'short'})}</div>` : ''}
+                </div>`;
+        }
+
+        function handleDragStart(event, todoId) {
+            event.dataTransfer.setData('text/plain', todoId);
+            event.target.classList.add('dragging');
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.currentTarget.classList.add('drag-over');
+        }
+
+        function handleDrop(event, newStatus) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('drag-over');
+            const todoId = parseInt(event.dataTransfer.getData('text/plain'));
+            if (!todoId) return;
+
+            // Remove dragging class from all cards
+            document.querySelectorAll('.kanban-card.dragging').forEach(el => el.classList.remove('dragging'));
+
+            updateTodo(todoId, { status: newStatus }).then(() => {
+                if (currentView === 'kanban') {
+                    // Reload to get fresh data for kanban (including archived)
+                    loadTodos();
+                    loadArchivedTodos();
+                }
+            });
+        }
+
+        // Remove drag-over class on dragleave
+        document.addEventListener('dragleave', (e) => {
+            if (e.target.classList && e.target.classList.contains('kanban-column')) {
+                e.target.classList.remove('drag-over');
+            }
+        });
+
         // -- Analytics & Chart.js --
         let productivityChart = null;
 
@@ -1360,6 +1783,87 @@
                                 font: { size: 10 }
                             }
                         }
+                    }
+                }
+            });
+        }
+
+        // -- Chart Switching --
+        function switchChart(type) {
+            document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.chart-tab[data-chart="${type}"]`).classList.add('active');
+
+            document.getElementById('productivityChartContainer').style.display = type === 'productivity' ? '' : 'none';
+            document.getElementById('burndownChartContainer').style.display = type === 'burndown' ? '' : 'none';
+            document.getElementById('productivityFooter').style.display = type === 'productivity' ? '' : 'none';
+            document.getElementById('burndownFooter').style.display = type === 'burndown' ? '' : 'none';
+
+            if (type === 'burndown' && !burndownChart) {
+                loadBurndown();
+            }
+        }
+
+        // -- Burndown Chart --
+        let burndownChart = null;
+
+        async function loadBurndown() {
+            try {
+                const response = await fetch(`${API_URL}/api/analytics/burndown?days=7`);
+                const result = await response.json();
+                renderBurndownChart(result.data || []);
+            } catch (error) {
+                console.error('Error loading burndown:', error);
+            }
+        }
+
+        function renderBurndownChart(data) {
+            const ctx = document.getElementById('burndownChart').getContext('2d');
+            const styles = getComputedStyle(document.documentElement);
+            const accent = styles.getPropertyValue('--primary').trim() || '#3b82f6';
+            const muted = styles.getPropertyValue('--text-muted').trim() || '#97A3B2';
+            const gridColor = styles.getPropertyValue('--border-subtle').trim() || 'rgba(148, 163, 184, 0.1)';
+
+            const labels = data.map(d => new Date(d.date).toLocaleDateString('fr-FR', { weekday: 'short' }));
+            const remaining = data.map(d => d.remaining);
+            const ideal = data.map(d => d.ideal);
+
+            if (burndownChart) burndownChart.destroy();
+
+            burndownChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Restant',
+                            data: remaining,
+                            borderColor: accent,
+                            backgroundColor: accent + '20',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 4,
+                            pointBackgroundColor: accent
+                        },
+                        {
+                            label: 'Idéal',
+                            data: ideal,
+                            borderColor: muted,
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true, position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: gridColor }, ticks: { font: { size: 10 } } },
+                        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
                     }
                 }
             });
@@ -1580,6 +2084,8 @@
             loadHabits();
             loadTodayTasks();
             loadCalendar();
+            loadBriefing();
+            loadAIPriorities();
         });
 
         // Hook dans les updates existants pour rafraichir les nouveaux widgets

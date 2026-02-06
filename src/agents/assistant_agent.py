@@ -506,6 +506,11 @@ def generate_daily_briefing() -> str:
     now = datetime.now()
     day_name = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'][now.weekday()]
 
+    # Inject session context
+    session_ctx = get_session_context_summary()
+    if session_ctx:
+        context += f"\n\n{session_ctx}"
+
     prompt = f"""Date: {day_name} {now.strftime('%d/%m/%Y %H:%M')}
 User: Alexandre, CPO EasyNode (IA souveraine)
 
@@ -584,6 +589,307 @@ def send_briefing_telegram(briefing: str) -> bool:
         return response.status_code == 200
     except:
         return False
+
+
+# =============================================================================
+# AI FEATURES WITH CACHE
+# =============================================================================
+
+def suggest_daily_priorities() -> dict:
+    """Suggest optimal daily priority order for pending tasks. Cached 20h."""
+    from src.services.ai_cache import get_cached, set_cached
+
+    today = datetime.now().date().isoformat()
+    cache_key = f"prioritize:{today}"
+
+    cached = get_cached(cache_key)
+    if cached:
+        return cached
+
+    # Fetch pending tasks
+    try:
+        response = requests.get(f"{DASHBOARD_API_URL}/todos?status=pending", timeout=10)
+        todos = response.json() if response.status_code == 200 else []
+    except Exception:
+        return {'error': 'Cannot fetch todos'}
+
+    if not todos:
+        return {'priorities': [], 'reasoning': 'Aucune tâche en attente.'}
+
+    # Build compact task list for prompt
+    task_lines = []
+    for t in todos[:20]:
+        deadline = f" (deadline: {t.get('deadline', 'none')})" if t.get('deadline') else ""
+        task_lines.append(f"- [{t['id']}] {t['title']} | {t['category']} | {t['priority']}{deadline}")
+
+    now = datetime.now()
+    day_name = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'][now.weekday()]
+
+    prompt = f"""Date: {day_name} {now.strftime('%d/%m/%Y')}
+Tâches en attente:
+{chr(10).join(task_lines)}
+
+Propose un ordre optimal pour la journée (max 7 tâches). Critères: urgence, deadlines proches, impact business.
+
+Réponds en JSON:
+{{"priorities": [{{"id": 1, "title": "...", "reason": "courte raison"}}], "summary": "phrase motivante"}}"""
+
+    try:
+        response = claude.messages.create(
+            model=CLAUDE_MODEL,
+            max_tokens=400,
+            system="Tu optimises l'ordre des tâches pour la productivité. JSON uniquement.",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        text = response.content[0].text.strip()
+        if text.startswith('```'):
+            text = text.replace('```json', '').replace('```', '').strip()
+        result = json.loads(text)
+    except Exception:
+        # Fallback: return tasks sorted by priority
+        priority_order = {'urgent': 0, 'important': 1, 'normal': 2}
+        sorted_todos = sorted(todos[:7], key=lambda t: priority_order.get(t.get('priority', 'normal'), 2))
+        result = {
+            'priorities': [{'id': t['id'], 'title': t['title'], 'reason': t['priority']} for t in sorted_todos],
+            'summary': 'Ordre basé sur les priorités.'
+        }
+
+    set_cached(cache_key, 'prioritize', result, ttl_hours=20)
+    return result
+
+
+def suggest_deadline(category: str, title: str) -> dict:
+    """Suggest a deadline based on velocity data or AI. Cached 24h."""
+    from src.services.ai_cache import get_cached, set_cached
+    from src.db import get_db
+
+    today = datetime.now().date().isoformat()
+    cache_key = f"velocity:{category}:{today}"
+
+    cached = get_cached(cache_key)
+    if cached:
+        avg_days = cached.get('avg_days')
+        if avg_days:
+            suggested = datetime.now() + timedelta(days=avg_days)
+            return {
+                'suggested_date': suggested.date().isoformat(),
+                'suggested_days': avg_days,
+                'source': 'velocity'
+            }
+
+    # Calculate average completion time for this category
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT AVG(julianday(completed_at) - julianday(created_at)) as avg_days,
+               COUNT(*) as count
+        FROM todos
+        WHERE category = ? AND status = 'completed' AND completed_at IS NOT NULL
+    ''', (category,))
+    row = cursor.fetchone()
+    conn.close()
+
+    if row and row['count'] and row['count'] >= 5 and row['avg_days']:
+        avg_days = round(row['avg_days'])
+        if avg_days < 1:
+            avg_days = 1
+        set_cached(cache_key, 'velocity', {'avg_days': avg_days, 'count': row['count']}, ttl_hours=24)
+        suggested = datetime.now() + timedelta(days=avg_days)
+        return {
+            'suggested_date': suggested.date().isoformat(),
+            'suggested_days': avg_days,
+            'source': 'velocity'
+        }
+
+    # Not enough data: use AI
+    try:
+        prompt = f'Tâche: "{title}" (catégorie: {category}). Estime le nombre de jours réaliste pour la compléter. Réponds en JSON: {{"days": N, "reason": "courte raison"}}'
+        response = claude.messages.create(
+            model=CLAUDE_MODEL,
+            max_tokens=100,
+            system="Tu estimes des délais de tâches. JSON uniquement.",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        text = response.content[0].text.strip()
+        if text.startswith('```'):
+            text = text.replace('```json', '').replace('```', '').strip()
+        result = json.loads(text)
+        days = result.get('days', 7)
+    except Exception:
+        days = 7
+
+    set_cached(cache_key, 'velocity', {'avg_days': days, 'count': 0}, ttl_hours=24)
+    suggested = datetime.now() + timedelta(days=days)
+    return {
+        'suggested_date': suggested.date().isoformat(),
+        'suggested_days': days,
+        'source': 'ai'
+    }
+
+
+def decompose_task(todo_id: int) -> dict:
+    """Decompose a task into 3-6 subtasks using AI. Cached 7 days."""
+    from src.services.ai_cache import get_cached, set_cached
+    from src.db import get_db
+
+    cache_key = f"decompose:{todo_id}"
+    cached = get_cached(cache_key)
+    if cached:
+        return cached
+
+    # Fetch the task
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM todos WHERE id = ?', (todo_id,))
+    row = cursor.fetchone()
+    conn.close()
+
+    if not row:
+        return {'error': 'Task not found'}
+
+    todo = dict(row)
+    prompt = f"""Tâche: "{todo['title']}"
+Description: {todo.get('description') or 'Aucune'}
+Catégorie: {todo.get('category', 'general')}
+
+Décompose cette tâche en 3-6 sous-tâches concrètes et actionnables.
+
+Réponds en JSON:
+{{"subtasks": [{{"title": "sous-tâche claire", "priority": "normal|important", "estimated_time": "30min|1h|2h"}}]}}"""
+
+    try:
+        response = claude.messages.create(
+            model=CLAUDE_MODEL,
+            max_tokens=400,
+            system="Tu décomposes des tâches en sous-tâches actionnables. JSON uniquement.",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        text = response.content[0].text.strip()
+        if text.startswith('```'):
+            text = text.replace('```json', '').replace('```', '').strip()
+        result = json.loads(text)
+    except Exception:
+        return {'error': 'AI decomposition failed'}
+
+    result['parent_id'] = todo_id
+    result['parent_title'] = todo['title']
+    set_cached(cache_key, 'decompose', result, ttl_hours=168, todo_id=todo_id)
+    return result
+
+
+def update_session_context(event: dict) -> None:
+    """Append an event to today's session context cache."""
+    from src.services.ai_cache import append_to_cache
+
+    today = datetime.now().date().isoformat()
+    cache_key = f"session:{today}"
+    append_to_cache(cache_key, 'session', event, ttl_hours=20, max_items=20)
+
+
+def get_session_context_summary() -> str:
+    """Get a 2-3 line summary of today's session context."""
+    from src.services.ai_cache import get_cached
+
+    today = datetime.now().date().isoformat()
+    cache_key = f"session:{today}"
+    cached = get_cached(cache_key)
+    if not cached or not cached.get('events'):
+        return ""
+
+    events = cached['events']
+    lines = []
+    for e in events[-5:]:
+        lines.append(f"- {e.get('type', '?')}: {e.get('detail', '?')}")
+    return "Contexte du jour:\n" + "\n".join(lines)
+
+
+def generate_weekly_review() -> dict:
+    """Generate a weekly review from task_history data. Cached 7 days."""
+    from src.services.ai_cache import get_cached, set_cached
+    from src.db import get_db
+
+    week_key = datetime.now().strftime('%Y-W%W')
+    cache_key = f"weekly_review:{week_key}"
+
+    cached = get_cached(cache_key)
+    if cached:
+        return cached
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Get last 7 days of history
+    cursor.execute('''
+        SELECT * FROM task_history
+        WHERE date >= date('now', '-7 days')
+        ORDER BY date ASC
+    ''')
+    history = [dict(row) for row in cursor.fetchall()]
+
+    # Category breakdown for the week
+    cursor.execute('''
+        SELECT category, COUNT(*) as count FROM todos
+        WHERE status = 'completed' AND date(completed_at) >= date('now', '-7 days')
+        GROUP BY category ORDER BY count DESC
+    ''')
+    by_category = [dict(row) for row in cursor.fetchall()]
+
+    # Overdue count
+    cursor.execute('''
+        SELECT COUNT(*) as count FROM todos
+        WHERE status = 'pending' AND deadline IS NOT NULL AND deadline < ?
+    ''', (datetime.now().isoformat(),))
+    overdue = cursor.fetchone()['count']
+
+    conn.close()
+
+    total_completed = sum(h.get('completed_count', 0) for h in history)
+    total_created = sum(h.get('created_count', 0) for h in history)
+    avg_pending = round(sum(h.get('pending_count', 0) for h in history) / max(len(history), 1))
+
+    stats_text = f"""Semaine {week_key}:
+- Complétées: {total_completed}
+- Créées: {total_created}
+- Pending moyen: {avg_pending}
+- En retard: {overdue}
+- Par catégorie: {', '.join(f"{c['category']}({c['count']})" for c in by_category)}"""
+
+    try:
+        prompt = f"""{stats_text}
+
+Génère un bilan hebdomadaire concis (5-8 lignes):
+1. Résumé de la semaine (productif? en retard?)
+2. Points forts
+3. Points d'amélioration
+4. Objectif pour la semaine prochaine
+
+Sois direct et motivant."""
+
+        response = claude.messages.create(
+            model=CLAUDE_MODEL,
+            max_tokens=400,
+            system="Tu fais des bilans hebdomadaires de productivité. Concis et motivant. Tutoie Alexandre.",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        review_text = response.content[0].text.strip()
+    except Exception:
+        review_text = f"Bilan semaine {week_key}: {total_completed} tâches complétées, {total_created} créées, {overdue} en retard."
+
+    result = {
+        'review': review_text,
+        'stats': {
+            'completed': total_completed,
+            'created': total_created,
+            'avg_pending': avg_pending,
+            'overdue': overdue,
+            'by_category': by_category
+        },
+        'week': week_key,
+        'generated_at': datetime.now().isoformat()
+    }
+
+    set_cached(cache_key, 'weekly_review', result, ttl_hours=168)
+    return result
 
 
 # =============================================================================

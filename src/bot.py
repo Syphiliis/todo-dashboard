@@ -221,7 +221,17 @@ def analyze_task_with_claude(message: str) -> dict:
     Analyse une tâche avec Claude pour le mode intelligent.
     Retourne: titre, catégorie, priorité, temps estimé, guide, questions éventuelles.
     """
-    user_prompt = f"""Analyse cette demande de tâche: "{message}"
+    # Inject session context if available
+    session_context = ""
+    try:
+        from src.agents.assistant_agent import get_session_context_summary
+        session_context = get_session_context_summary()
+        if session_context:
+            session_context = f"\n\n{session_context}\n"
+    except Exception:
+        pass
+
+    user_prompt = f"""Analyse cette demande de tâche: "{message}"{session_context}
 
 Réponds en JSON:
 {{
@@ -368,6 +378,16 @@ def detect_intent(message: str) -> str:
     if any(p in message_lower for p in stats_patterns):
         return 'show_stats'
 
+    # Patterns pour focus/pomodoro
+    focus_patterns = ['focus', 'pomodoro', 'concentre', 'timer', 'minuteur']
+    if any(p in message_lower for p in focus_patterns):
+        return 'focus'
+
+    # Patterns pour review/bilan
+    review_patterns = ['review', 'revue', 'bilan', 'semaine']
+    if any(p in message_lower for p in review_patterns):
+        return 'weekly_review'
+
     # Par défaut, on considère que c'est une nouvelle tâche
     return 'add_task'
 
@@ -512,12 +532,18 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 📝 **Gestion des tâches**
 • `/add <tâche>` - Ajoute une nouvelle tâche (mode intelligent)
+• `/add --force <tâche>` - Ajoute sans reformulation IA
 • `/list` - Liste toutes les tâches en attente
 • `/done <id ou titre>` - Marque une tâche comme terminée
 
 📊 **Statistiques & Planning**
 • `/stats` - Affiche les statistiques du dashboard
 • `/roadmap` - Affiche la roadmap (mi-terme et long-terme)
+• `/review` - Bilan hebdomadaire IA
+
+🎯 **Focus**
+• `/focus` - Démarre un Pomodoro 25 min sur ta priorité #1
+• `/focus stop` - Arrête la session focus
 
 ✍️ **Contenu**
 • `/content <sujet>` - Génère du contenu pour réseaux sociaux
@@ -580,13 +606,40 @@ _Copie et adapte selon tes besoins!_"""
 
 
 async def cmd_add(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handler /add <tâche> - Ajoute une tâche"""
+    """Handler /add <tâche> - Ajoute une tâche
+
+    Flags:
+        --force ou -f : Ajoute la tâche telle quelle sans reformulation IA
+    """
     if not context.args:
-        await update.message.reply_text("Usage: `/add <tâche> [urgent|important] [catégorie]`", parse_mode='Markdown')
+        await update.message.reply_text(
+            "Usage: `/add <tâche> [urgent|important] [catégorie]`\n"
+            "Option: `--force` ou `-f` pour ajouter sans reformulation IA",
+            parse_mode='Markdown'
+        )
         return
 
-    message = ' '.join(context.args)
-    await process_add_task(update, message)
+    args = list(context.args)
+    force_mode = False
+
+    # Détecter le flag --force ou -f
+    if '--force' in args:
+        force_mode = True
+        args.remove('--force')
+    if '-f' in args:
+        force_mode = True
+        args.remove('-f')
+
+    message = ' '.join(args)
+
+    if not message:
+        await update.message.reply_text("❌ Titre de tâche requis.", parse_mode='Markdown')
+        return
+
+    if force_mode:
+        await process_add_task_force(update, message)
+    else:
+        await process_add_task(update, message)
 
 
 async def cmd_done(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -605,8 +658,21 @@ async def cmd_briefing(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         # Import dynamique pour éviter les erreurs si Gmail pas configuré
-        from src.agents.assistant_agent import what_should_i_do
+        from src.agents.assistant_agent import what_should_i_do, suggest_daily_priorities
         briefing = what_should_i_do()
+
+        # Append AI priorities
+        try:
+            priorities = suggest_daily_priorities()
+            if priorities.get('priorities'):
+                briefing += "\n\n🤖 **Ordre suggéré par l'IA:**\n"
+                for i, p in enumerate(priorities['priorities'][:5], 1):
+                    briefing += f"  {i}. {p.get('title', '?')}\n"
+                if priorities.get('summary'):
+                    briefing += f"\n_{priorities['summary']}_"
+        except Exception:
+            pass
+
         await update.message.reply_text(briefing, parse_mode='Markdown')
     except ImportError:
         # Fallback sans assistant_agent
@@ -647,6 +713,88 @@ async def cmd_event(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     message = ' '.join(context.args)
     await process_create_event(update, message)
+
+
+async def cmd_focus(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handler /focus - Start a 25-min Pomodoro focus session."""
+    args = context.args if context.args else []
+
+    if args and args[0].lower() == 'stop':
+        # Stop any running focus timer
+        jobs = context.job_queue.get_jobs_by_name(f'focus_{update.effective_chat.id}')
+        if jobs:
+            for job in jobs:
+                job.schedule_removal()
+            await update.message.reply_text("⏹️ Session focus annulée.", parse_mode='Markdown')
+        else:
+            await update.message.reply_text("❌ Aucune session focus en cours.", parse_mode='Markdown')
+        return
+
+    # Get AI priorities to pick the top task
+    task_name = "tâche prioritaire"
+    try:
+        from src.agents.assistant_agent import suggest_daily_priorities
+        priorities = suggest_daily_priorities()
+        if priorities.get('priorities'):
+            top = priorities['priorities'][0]
+            task_name = top.get('title', task_name)
+    except Exception:
+        # Fallback: get first pending task
+        todos = get_todos(status='pending')
+        if todos and isinstance(todos, list) and len(todos) > 0:
+            task_name = todos[0].get('title', task_name)
+
+    duration = 25  # minutes
+
+    await update.message.reply_text(
+        f"🎯 **Session Focus démarrée!**\n\n"
+        f"📝 Tâche: **{task_name}**\n"
+        f"⏱️ Durée: {duration} minutes\n\n"
+        f"_Concentre-toi, je te notifie à la fin!_\n"
+        f"💡 `/focus stop` pour annuler",
+        parse_mode='Markdown'
+    )
+
+    # Schedule notification
+    async def focus_end(context: ContextTypes.DEFAULT_TYPE):
+        await context.bot.send_message(
+            chat_id=context.job.chat_id,
+            text=f"🔔 **Fin de session Focus!**\n\n"
+                 f"📝 Tâche: **{task_name}**\n"
+                 f"⏱️ {duration} minutes écoulées\n\n"
+                 f"☕ Prends une pause de 5 min!\n"
+                 f"_Utilise `/done {task_name[:20]}` si tu as terminé._",
+            parse_mode='Markdown'
+        )
+
+    context.job_queue.run_once(
+        focus_end,
+        when=duration * 60,
+        chat_id=update.effective_chat.id,
+        name=f'focus_{update.effective_chat.id}'
+    )
+
+
+async def cmd_review(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handler /review - Weekly review."""
+    await update.message.reply_text("📊 Génération du bilan hebdomadaire...", parse_mode='Markdown')
+
+    try:
+        from src.agents.assistant_agent import generate_weekly_review
+        result = generate_weekly_review()
+        review = result.get('review', 'Bilan non disponible.')
+        stats = result.get('stats', {})
+
+        msg = f"📊 **Bilan Hebdomadaire**\n\n{review}\n\n"
+        if stats:
+            msg += f"📈 Complétées: {stats.get('completed', 0)} | Créées: {stats.get('created', 0)}"
+            if stats.get('overdue', 0) > 0:
+                msg += f" | ⚠️ En retard: {stats['overdue']}"
+
+        await update.message.reply_text(msg, parse_mode='Markdown')
+    except Exception as e:
+        logger.error(f"Review error: {e}")
+        await update.message.reply_text(f"❌ Erreur: {str(e)}")
 
 
 async def process_simple_briefing(update: Update):
@@ -768,28 +916,45 @@ async def process_smart_add_task(update: Update, message: str):
     
     else:
         # Pas de questions, créer directement la tâche
+        deadline = result.get('deadline')
+
+        # Suggest deadline if none detected
+        deadline_hint = ""
+        if not deadline:
+            try:
+                from src.agents.assistant_agent import suggest_deadline
+                suggestion = suggest_deadline(
+                    category=result.get('category', 'easynode'),
+                    title=result.get('title', message)
+                )
+                if suggestion.get('suggested_date'):
+                    deadline = suggestion['suggested_date']
+                    deadline_hint = f"\n📅 Deadline suggérée: {suggestion['suggested_date']} ({suggestion.get('suggested_days', '?')} jours)"
+            except Exception:
+                pass
+
         description = format_guide_as_description(result)
         todo = create_todo(
             title=result.get('title', message),
             category=result.get('category', 'easynode'),
             priority=result.get('priority', 'normal'),
-            deadline=result.get('deadline'),
+            deadline=deadline,
             description=description,
             time_estimate=result.get('time_estimate')
         )
-        
+
         if 'error' in todo:
             await update.message.reply_text(f"❌ Erreur création: {todo['error']}")
             return
-        
+
         msg = f"""✅ **Tâche ajoutée!**
 
 {priority_emoji} **{todo['title']}**
 📁 {todo['category']} | ⏱️ {result.get('time_estimate', '?')}
-🔢 ID: {todo['id']}
+🔢 ID: {todo['id']}{deadline_hint}
 {guide_text}
 💡 Bonne chance!"""
-        
+
         await update.message.reply_text(msg, parse_mode='Markdown')
 
 
@@ -1041,6 +1206,60 @@ async def process_add_task(update: Update, message: str):
     await process_smart_add_task(update, message)
 
 
+async def process_add_task_force(update: Update, message: str):
+    """
+    Ajoute une tâche directement sans reformulation IA.
+    Détecte uniquement priorité et catégorie via patterns simples.
+    """
+    message_lower = message.lower()
+
+    # Détection priorité (patterns simples)
+    priority = 'normal'
+    if 'urgent' in message_lower:
+        priority = 'urgent'
+        message = re.sub(r'\s*urgent\s*', ' ', message, flags=re.IGNORECASE).strip()
+    elif 'important' in message_lower:
+        priority = 'important'
+        message = re.sub(r'\s*important\s*', ' ', message, flags=re.IGNORECASE).strip()
+
+    # Détection catégorie (patterns simples)
+    categories = ['easynode', 'immobilier', 'content', 'personnel', 'admin']
+    category = 'easynode'  # default
+    for cat in categories:
+        if cat in message_lower:
+            category = cat
+            message = re.sub(rf'\s*{cat}\s*', ' ', message, flags=re.IGNORECASE).strip()
+            break
+
+    # Nettoyer le titre
+    title = ' '.join(message.split())  # Remove extra spaces
+
+    if not title:
+        await update.message.reply_text("❌ Titre de tâche requis.", parse_mode='Markdown')
+        return
+
+    # Créer la tâche directement
+    todo = create_todo(
+        title=title,
+        category=category,
+        priority=priority
+    )
+
+    if 'error' in todo:
+        await update.message.reply_text(f"❌ Erreur création: {todo['error']}")
+        return
+
+    priority_emoji = {'urgent': '🔴', 'important': '🟠', 'normal': '🟡'}.get(priority, '⚪')
+
+    msg = f"""✅ **Tâche ajoutée (mode direct)**
+
+{priority_emoji} **{todo['title']}**
+📁 {todo['category']}
+🔢 ID: {todo['id']}"""
+
+    await update.message.reply_text(msg, parse_mode='Markdown')
+
+
 async def process_complete_task(update: Update, identifier: str):
     """Traite la complétion d'une tâche."""
     todos = get_todos(status='pending')
@@ -1141,6 +1360,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif intent == 'show_stats':
         await cmd_stats(update, context)
 
+    elif intent == 'focus':
+        await cmd_focus(update, context)
+
+    elif intent == 'weekly_review':
+        await cmd_review(update, context)
+
     else:
         # Par défaut, traiter comme nouvelle tâche
         await process_add_task(update, message)
@@ -1170,6 +1395,8 @@ def main():
     app.add_handler(CommandHandler("done", cmd_done))
     app.add_handler(CommandHandler("help", cmd_help))
     app.add_handler(CommandHandler("site", cmd_site))
+    app.add_handler(CommandHandler("focus", cmd_focus))
+    app.add_handler(CommandHandler("review", cmd_review))
 
     # Handler pour messages naturels
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))

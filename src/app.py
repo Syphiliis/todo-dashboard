@@ -14,7 +14,8 @@ from flask_cors import CORS
 from src.config import DASHBOARD_ACCESS_TOKEN, DCA_APP_URL, DCA_BACKEND_URL, PORT, TIMEZONE
 from src.db import get_db, init_db
 from src.services.daily_content import generate_daily_content
-from src.services.reminders import check_deadlines, send_daily_recap
+from src.services.ai_cache import cleanup_expired, get_cached, set_cached
+from src.services.reminders import check_deadlines, record_daily_stats, send_daily_recap, spawn_recurring_tasks
 from src.services.telegram import send_telegram_message
 
 app = Flask(__name__, static_folder='../static')
@@ -31,7 +32,48 @@ scheduler = BackgroundScheduler(timezone=TIMEZONE)
 scheduler.add_job(check_deadlines, 'interval', minutes=15)
 scheduler.add_job(send_daily_recap, 'cron', hour=19, minute=0)  # 7 PM daily
 scheduler.add_job(generate_daily_content, 'cron', hour=6, minute=0)  # 6 AM daily
+scheduler.add_job(cleanup_expired, 'interval', hours=6)  # Purge expired AI cache
+scheduler.add_job(record_daily_stats, 'cron', hour=23, minute=55)  # Record daily stats
+scheduler.add_job(spawn_recurring_tasks, 'cron', hour=0, minute=5)  # Spawn recurring tasks
+scheduler.add_job(lambda: send_morning_briefing(), 'cron', hour=8, minute=0)  # Morning briefing
+scheduler.add_job(lambda: send_weekly_review(), 'cron', day_of_week='sun', hour=20, minute=0)  # Weekly review
 scheduler.start()
+
+
+def send_morning_briefing():
+    """Generate and send morning briefing, cached for the day."""
+    today = datetime.now().date().isoformat()
+    cache_key = f"morning_briefing:{today}"
+
+    cached = get_cached(cache_key)
+    if cached:
+        briefing = cached.get('briefing', '')
+    else:
+        try:
+            from src.agents.assistant_agent import generate_daily_briefing
+            briefing = generate_daily_briefing()
+            set_cached(cache_key, 'morning_briefing', {
+                'briefing': briefing,
+                'generated_at': datetime.now().isoformat()
+            }, ttl_hours=18)
+        except Exception:
+            return
+
+    send_telegram_message(briefing)
+
+
+def send_weekly_review():
+    """Generate and send weekly review via Telegram."""
+    try:
+        from src.agents.assistant_agent import generate_weekly_review
+        result = generate_weekly_review()
+        review = result.get('review', '')
+        if review:
+            message = f"📊 <b>Bilan Hebdomadaire</b>\n\n{review}"
+            send_telegram_message(message)
+    except Exception:
+        pass
+
 
 # Generate content on startup if needed
 generate_daily_content()
@@ -331,26 +373,34 @@ def get_todos():
     status = request.args.get('status')
     category = request.args.get('category')
     archived = request.args.get('archived')
+    include_children = request.args.get('include_children')
 
-    query = 'SELECT * FROM todos WHERE 1=1'
+    query = '''SELECT t.*,
+        (SELECT COUNT(*) FROM todos st WHERE st.parent_todo_id = t.id) as subtask_count,
+        (SELECT COUNT(*) FROM todos st WHERE st.parent_todo_id = t.id AND st.status = 'completed') as subtask_done_count
+        FROM todos t WHERE 1=1'''
     params = []
 
+    # Hide sub-tasks by default
+    if not include_children:
+        query += ' AND t.parent_todo_id IS NULL'
+
     if archived == '1':
-        query += ' AND archived = 1'
+        query += ' AND t.archived = 1'
     elif archived == '0':
-        query += ' AND archived = 0'
+        query += ' AND t.archived = 0'
     else:
         # Default behavior: hide archived AND completed unless specifically requested
-        query += ' AND archived = 0 AND status != "completed"'
+        query += ' AND t.archived = 0 AND t.status != "completed"'
 
     if status and status != 'all':
-        query += ' AND status = ?'
+        query += ' AND t.status = ?'
         params.append(status)
     if category and category != 'all':
-        query += ' AND category = ?'
+        query += ' AND t.category = ?'
         params.append(category)
 
-    query += ' ORDER BY CASE priority WHEN "urgent" THEN 1 WHEN "important" THEN 2 ELSE 3 END, deadline ASC'
+    query += ' ORDER BY CASE t.priority WHEN "urgent" THEN 1 WHEN "important" THEN 2 ELSE 3 END, t.deadline ASC'
 
     cursor.execute(query, params)
     todos = [dict(row) for row in cursor.fetchall()]
@@ -384,14 +434,17 @@ def create_todo():
     cursor = conn.cursor()
 
     cursor.execute('''
-        INSERT INTO todos (title, description, category, priority, deadline)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO todos (title, description, category, priority, deadline, recurrence_pattern, recurrence_end_date, parent_todo_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         data.get('title'),
         data.get('description'),
         data.get('category', 'general'),
         data.get('priority', 'normal'),
-        data.get('deadline')
+        data.get('deadline'),
+        data.get('recurrence_pattern'),
+        data.get('recurrence_end_date'),
+        data.get('parent_todo_id')
     ))
 
     todo_id = cursor.lastrowid
@@ -408,6 +461,17 @@ def create_todo():
         message += f"\n⏳ Deadline: {data.get('deadline')}"
 
     send_telegram_message(message)
+
+    # Track session context
+    try:
+        from src.agents.assistant_agent import update_session_context
+        update_session_context({'type': 'task_created', 'detail': data.get('title', '')})
+    except Exception:
+        pass
+
+    # Invalidate priorities cache when task created
+    from src.services.ai_cache import invalidate_pattern
+    invalidate_pattern('prioritize:')
 
     cursor.execute('SELECT * FROM todos WHERE id = ?', (todo_id,))
     todo = dict(cursor.fetchone())
@@ -430,7 +494,7 @@ def update_todo(todo_id):
 
     status_completed = data.get('status') == 'completed'
 
-    for field in ['title', 'description', 'category', 'priority', 'status', 'deadline', 'archived']:
+    for field in ['title', 'description', 'category', 'priority', 'status', 'deadline', 'archived', 'recurrence_pattern', 'recurrence_end_date']:
         if field in data:
             if field == 'archived' and status_completed:
                 continue
@@ -461,6 +525,14 @@ def update_todo(todo_id):
         todo = cursor.fetchone()
         if todo:
             send_telegram_message(f"✅ <b>Tâche terminée!</b>\n\n{todo['title']}\n\n<i>Bravo Alexandre! 🎉</i>")
+            # Track session context + invalidate priorities cache
+            try:
+                from src.agents.assistant_agent import update_session_context
+                update_session_context({'type': 'task_completed', 'detail': todo['title']})
+            except Exception:
+                pass
+            from src.services.ai_cache import invalidate_pattern
+            invalidate_pattern('prioritize:')
 
     cursor.execute('SELECT * FROM todos WHERE id = ?', (todo_id,))
     todo = dict(cursor.fetchone())
@@ -479,6 +551,20 @@ def delete_todo(todo_id):
     conn.close()
 
     return jsonify({'success': True})
+
+
+@app.route('/api/todos/<int:todo_id>/subtasks', methods=['GET'])
+def get_subtasks(todo_id):
+    """Get subtasks for a specific todo."""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT * FROM todos WHERE parent_todo_id = ?
+        ORDER BY CASE priority WHEN 'urgent' THEN 1 WHEN 'important' THEN 2 ELSE 3 END, created_at ASC
+    ''', (todo_id,))
+    subtasks = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return jsonify(subtasks)
 
 
 @app.route('/api/categories', methods=['GET'])
@@ -558,6 +644,37 @@ def send_daily_summary():
     """Send daily summary via Telegram."""
     send_daily_recap()
     return jsonify({'success': True})
+
+
+@app.route('/api/briefing', methods=['GET'])
+def get_briefing():
+    """Get daily briefing (cached or freshly generated)."""
+    today = datetime.now().date().isoformat()
+    cache_key = f"morning_briefing:{today}"
+
+    cached = get_cached(cache_key)
+    if cached:
+        return jsonify({
+            'briefing': cached.get('briefing', ''),
+            'cached': True,
+            'generated_at': cached.get('generated_at') or cached.get('_cached_at', '')
+        })
+
+    try:
+        from src.agents.assistant_agent import generate_daily_briefing
+        briefing = generate_daily_briefing()
+        generated_at = datetime.now().isoformat()
+        set_cached(cache_key, 'morning_briefing', {
+            'briefing': briefing,
+            'generated_at': generated_at
+        }, ttl_hours=18)
+        return jsonify({
+            'briefing': briefing,
+            'cached': False,
+            'generated_at': generated_at
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 # ============== ROADMAP ENDPOINTS ==============
@@ -810,6 +927,131 @@ def regenerate_daily_content():
         return jsonify(dict(content))
     
     return jsonify({'error': 'Could not generate daily content'}), 500
+
+
+# ============== AI FEATURES ==============
+
+@app.route('/api/ai/priorities', methods=['GET'])
+def get_ai_priorities():
+    """Get AI-suggested daily priorities."""
+    try:
+        from src.agents.assistant_agent import suggest_daily_priorities
+        result = suggest_daily_priorities()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/ai/suggest-deadline', methods=['POST'])
+def suggest_deadline_endpoint():
+    """Suggest a deadline based on velocity or AI."""
+    data = request.json
+    try:
+        from src.agents.assistant_agent import suggest_deadline
+        result = suggest_deadline(
+            category=data.get('category', 'general'),
+            title=data.get('title', '')
+        )
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/todos/<int:todo_id>/decompose', methods=['POST'])
+def decompose_todo(todo_id):
+    """Decompose a task into subtasks using AI."""
+    try:
+        from src.agents.assistant_agent import decompose_task
+        result = decompose_task(todo_id)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/todos/<int:todo_id>/apply-subtasks', methods=['POST'])
+def apply_subtasks(todo_id):
+    """Create subtasks from AI decomposition."""
+    data = request.json
+    subtasks = data.get('subtasks', [])
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    created = []
+    for st in subtasks:
+        cursor.execute('''
+            INSERT INTO todos (title, category, priority, parent_todo_id, description)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (
+            st.get('title'),
+            st.get('category') or data.get('category', 'general'),
+            st.get('priority', 'normal'),
+            todo_id,
+            st.get('estimated_time', '')
+        ))
+        created.append({'id': cursor.lastrowid, 'title': st.get('title')})
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({'created': created, 'count': len(created)})
+
+
+@app.route('/api/ai/weekly-review', methods=['GET'])
+def get_weekly_review():
+    """Get AI-generated weekly review."""
+    try:
+        from src.agents.assistant_agent import generate_weekly_review
+        result = generate_weekly_review()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ============== BURNDOWN ==============
+
+@app.route('/api/analytics/burndown', methods=['GET'])
+def get_burndown():
+    """Get burndown chart data from task_history."""
+    days = int(request.args.get('days', 7))
+    conn = get_db()
+    cursor = conn.cursor()
+
+    data = []
+    for i in range(days - 1, -1, -1):
+        date = (datetime.now() - timedelta(days=i)).date().isoformat()
+        cursor.execute('SELECT * FROM task_history WHERE date = ?', (date,))
+        row = cursor.fetchone()
+        if row:
+            data.append({
+                'date': date,
+                'remaining': row['pending_count'],
+                'completed': row['completed_count'],
+                'created': row['created_count']
+            })
+        else:
+            # Calculate from todos table
+            cursor.execute('''
+                SELECT COUNT(*) as count FROM todos
+                WHERE status = 'pending' AND date(created_at) <= ?
+            ''', (date,))
+            pending = cursor.fetchone()['count']
+            data.append({
+                'date': date,
+                'remaining': pending,
+                'completed': 0,
+                'created': 0
+            })
+
+    # Calculate ideal burndown line
+    if data:
+        start_remaining = data[0]['remaining'] + sum(d['completed'] for d in data)
+        ideal_step = start_remaining / max(len(data) - 1, 1)
+        for i, d in enumerate(data):
+            d['ideal'] = round(max(start_remaining - (ideal_step * i), 0))
+
+    conn.close()
+    return jsonify({'data': data})
 
 
 # ============== VUE JOURNALIÈRE ==============

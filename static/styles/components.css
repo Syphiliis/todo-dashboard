@@ -743,3 +743,125 @@
   height: 40px;
   border-radius: var(--radius-full);
 }
+
+/* ===================================
+   KANBAN BOARD
+   =================================== */
+
+.kanban-board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+  min-height: 400px;
+}
+
+@media (max-width: 768px) {
+  .kanban-board {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+}
+
+.kanban-column {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  min-height: 200px;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.kanban-column.drag-over {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.kanban-column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.kanban-count {
+  font-size: 12px;
+  font-weight: var(--font-weight-bold);
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.kanban-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.kanban-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  cursor: grab;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.kanban-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.kanban-card.dragging {
+  opacity: 0.4;
+  transform: rotate(2deg);
+}
+
+.kanban-card:active {
+  cursor: grabbing;
+}
+
+/* ===================================
+   VIEW TOGGLE
+   =================================== */
+
+.view-toggle {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+  border-radius: var(--radius-sm);
+}
+
+.view-toggle:hover {
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+}
+
+.view-toggle.active {
+  color: var(--text-inverse);
+  background: var(--gradient-primary);
+}
+
+/* ===================================
+   SUBTASK BADGE
+   =================================== */
+
+.subtask-badge {
+  cursor: pointer;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  background: var(--primary-light);
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.subtask-badge:hover {
+  background: var(--primary);
+  color: var(--text-inverse);
+}
