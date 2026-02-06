@@ -23,7 +23,7 @@ TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY')
 CLAUDE_MODEL = os.getenv('CLAUDE_MODEL', 'claude-haiku-4-5-20251001')
-DASHBOARD_API_URL = os.getenv('DASHBOARD_API_URL', 'http://localhost:5000/api')
+DASHBOARD_API_URL = os.getenv('DASHBOARD_API_URL', 'http://localhost:5001/api')
 MAX_TOKENS = int(os.getenv('MAX_TOKENS_RESPONSE', 500))
 
 # Logging
@@ -622,15 +622,21 @@ async def cmd_add(update: Update, context: ContextTypes.DEFAULT_TYPE):
     args = list(context.args)
     force_mode = False
 
-    # Détecter le flag --force ou -f (Telegram converts -- to em-dash —)
-    for flag in ['--force', '—force', '\u2014force']:
-        if flag in args:
-            force_mode = True
-            args.remove(flag)
+    # Détecter le flag --force ou -f
+    # Telegram/iOS convertit -- en em-dash (—), en-dash (–), etc.
+    # On strip tous les types de tirets Unicode et on vérifie si le reste est "force"
+    force_idx = None
+    for i, arg in enumerate(args):
+        cleaned = arg.lstrip('-\u2014\u2013\u2012\u2015\u2212\u002D')
+        if cleaned.lower() == 'force':
+            force_idx = i
             break
-    if not force_mode and '-f' in args:
+        if arg == '-f':
+            force_idx = i
+            break
+    if force_idx is not None:
         force_mode = True
-        args.remove('-f')
+        args.pop(force_idx)
 
     message = ' '.join(args)
 
