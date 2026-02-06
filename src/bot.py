@@ -622,11 +622,13 @@ async def cmd_add(update: Update, context: ContextTypes.DEFAULT_TYPE):
     args = list(context.args)
     force_mode = False
 
-    # Détecter le flag --force ou -f
-    if '--force' in args:
-        force_mode = True
-        args.remove('--force')
-    if '-f' in args:
+    # Détecter le flag --force ou -f (Telegram converts -- to em-dash —)
+    for flag in ['--force', '—force', '\u2014force']:
+        if flag in args:
+            force_mode = True
+            args.remove(flag)
+            break
+    if not force_mode and '-f' in args:
         force_mode = True
         args.remove('-f')
 

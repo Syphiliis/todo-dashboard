@@ -9,16 +9,22 @@ __pycache__/
 *.pyo
 *.pyd
 *.egg-info/
+dist/
+build/
 .venv/
 venv/
+env/
 
 # Runtime data
-/data/
-*.db
 data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
 
 # Logs
 *.log
+logs/
 
 # Node (DCA)
 dca/node_modules/
@@ -29,6 +35,15 @@ gmail_credentials.json
 token.json
 token.pickle
 *.pickle
+credentials*.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
 # OS
 .DS_Store
+Thumbs.db

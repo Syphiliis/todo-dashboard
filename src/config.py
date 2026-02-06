@@ -10,7 +10,7 @@ ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY')
 CLAUDE_MODEL = os.getenv('CLAUDE_MODEL', 'claude-haiku-4-5-20251001')
 DASHBOARD_ACCESS_TOKEN = os.getenv('DASHBOARD_ACCESS_TOKEN')
 
-DASHBOARD_API_URL = os.getenv('DASHBOARD_API_URL', 'http://localhost:5000/api')
+DASHBOARD_API_URL = os.getenv('DASHBOARD_API_URL', 'http://localhost:5001/api')
 DASHBOARD_PUBLIC_URL = os.getenv('DASHBOARD_PUBLIC_URL')
 
 TIMEZONE = os.getenv('TIMEZONE', 'Europe/Paris')
